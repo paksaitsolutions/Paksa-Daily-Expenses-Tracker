@@ -50,6 +50,26 @@
                         <a href="export.html" class="text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Export</a>
                     </div>
                 </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-gray-900 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+                <a href="index.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Dashboard</a>
+                <a href="analytics.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Analytics</a>
+                <a href="budget.html" class="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 rounded-md">Budget</a>
+                <a href="settings.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Settings</a>
+                <a href="export.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Export</a>
             </div>
         </div>
     </nav>
@@ -137,17 +157,88 @@
         
         function populateBudgetCategories() {
             const select = document.getElementById('budgetCategory');
-            if (window.expenseTracker) {
-                select.innerHTML = '<option value="">Select category</option>' +
-                    window.expenseTracker.categories.map(cat => 
-                        `<option value="${cat.name}">${cat.name}</option>`
-                    ).join('');
+            const categories = [
+                'Business Operations', 'Medical & Health', 'Travel & Transportation',
+                'Dining Out', 'Entertainment', 'Office Supplies', 'Personal Care',
+                'Shopping', 'Utilities', 'Rent & Mortgage'
+            ];
+            
+            select.innerHTML = '<option value="">Select category</option>' +
+                categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+        
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) {
+                mobileMenu.classList.toggle('hidden');
             }
         }
         
         document.addEventListener('DOMContentLoaded', function() {
-            if (window.expenseTracker) {
-                window.expenseTracker.loadBudgetPage();
+            // Initialize budget data
+            const budgets = {
+                'Business Operations': 500,
+                'Medical & Health': 300,
+                'Travel & Transportation': 400,
+                'Dining Out': 200,
+                'Entertainment': 150
+            };
+            
+            // Load budget list
+            const budgetList = document.getElementById('budgetList');
+            if (budgetList) {
+                budgetList.innerHTML = Object.entries(budgets).map(([category, budget]) => {
+                    const spent = Math.random() * budget; // Sample data
+                    const percentage = (spent / budget) * 100;
+                    const remaining = budget - spent;
+                    
+                    let statusClass = 'under-budget';
+                    let statusText = 'On Track';
+                    
+                    if (percentage > 100) {
+                        statusClass = 'over-budget';
+                        statusText = 'Over Budget';
+                    } else if (percentage > 80) {
+                        statusClass = 'near-budget';
+                        statusText = 'Near Limit';
+                    }
+                    
+                    return `
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-medium text-gray-900">${category}</h3>
+                                <span class="text-sm font-medium ${percentage > 100 ? 'text-red-600' : percentage > 80 ? 'text-yellow-600' : 'text-green-600'}">
+                                    ${statusText}
+                                </span>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                <span>Spent: $${spent.toFixed(2)}</span>
+                                <span>Budget: $${budget.toFixed(2)}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                <div class="budget-progress ${statusClass} h-2 rounded-full" style="width: ${Math.min(percentage, 100)}%"></div>
+                            </div>
+                            <div class="text-sm ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                ${remaining >= 0 ? 'Remaining' : 'Over by'}: $${Math.abs(remaining).toFixed(2)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Handle budget form submission
+            const budgetForm = document.getElementById('budgetForm');
+            if (budgetForm) {
+                budgetForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const category = document.getElementById('budgetCategory').value;
+                    const amount = document.getElementById('budgetAmount').value;
+                    
+                    if (category && amount) {
+                        alert(`Budget set for ${category}: $${amount}`);
+                        closeBudgetModal();
+                    }
+                });
             }
         });
     </script>

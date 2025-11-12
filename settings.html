@@ -965,3 +965,43 @@
                     document.getElementById('timeZone').value = settings.app.timeZone || 'local';
                     document.getElementById('language').value = settings.app.language || 'en';
                 }
+                
+                // Load export settings
+                if (settings.export) {
+                    document.getElementById('defaultExportFormat').value = settings.export.defaultFormat || 'csv';
+                    document.getElementById('defaultDateRange').value = settings.export.defaultDateRange || 'monthly';
+                    document.getElementById('includeReceipts').checked = settings.export.includeReceipts || false;
+                    document.getElementById('includeSummary').checked = settings.export.includeSummary !== false;
+                    document.getElementById('autoTaxReports').checked = settings.export.autoTaxReports !== false;
+                }
+            }
+            
+            // Initialize animations
+            if (typeof anime !== 'undefined') {
+                anime({
+                    targets: '.animate-on-load',
+                    opacity: [0, 1],
+                    translateY: [20, 0],
+                    delay: anime.stagger(100),
+                    duration: 600,
+                    easing: 'easeOutQuart'
+                });
+            }
+        });
+        
+        // Handle category form submission
+        document.getElementById('categoryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const categoryName = document.getElementById('categoryName').value;
+            const isTaxDeductible = document.getElementById('isTaxDeductible').checked;
+            
+            if (categoryName.trim()) {
+                // Add category logic would go here
+                alert(`Category "${categoryName}" would be added with color ${selectedColor} and tax deductible: ${isTaxDeductible}`);
+                closeAddCategoryModal();
+            }
+        });
+    </script>
+</body>
+</html>

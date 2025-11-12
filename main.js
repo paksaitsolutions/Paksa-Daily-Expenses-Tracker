@@ -304,10 +304,14 @@ class PaksaExpenseTracker {
     }
 
     init() {
-        this.setupEventListeners();
-        this.loadPageContent();
-        this.updateTotals();
-        this.initializeAnimations();
+        try {
+            this.setupEventListeners();
+            this.loadPageContent();
+            this.updateTotals();
+            this.initializeAnimations();
+        } catch (error) {
+            console.error('Error initializing app:', error);
+        }
     }
 
     setupEventListeners() {
@@ -360,23 +364,27 @@ class PaksaExpenseTracker {
     }
 
     loadPageContent() {
-        switch(this.currentPage) {
-            case 'index.html':
-            case '':
-                this.loadDashboard();
-                break;
-            case 'analytics.html':
-                this.loadAnalytics();
-                break;
-            case 'settings.html':
-                this.loadSettings();
-                break;
-            case 'export.html':
-                this.loadExport();
-                break;
-            case 'budget.html':
-                this.loadBudgetPage();
-                break;
+        try {
+            switch(this.currentPage) {
+                case 'index.html':
+                case '':
+                    this.loadDashboard();
+                    break;
+                case 'analytics.html':
+                    this.loadAnalytics();
+                    break;
+                case 'settings.html':
+                    this.loadSettings();
+                    break;
+                case 'export.html':
+                    this.loadExport();
+                    break;
+                case 'budget.html':
+                    this.loadBudgetPage();
+                    break;
+            }
+        } catch (error) {
+            console.error('Error loading page content:', error);
         }
     }
 
@@ -1240,10 +1248,14 @@ class PaksaExpenseTracker {
     }
 
     renderCharts() {
-        if (typeof echarts !== 'undefined') {
-            this.renderExpenseChart();
-            this.renderCategoryChart();
-            this.renderTaxChart();
+        try {
+            if (typeof echarts !== 'undefined') {
+                this.renderExpenseChart();
+                this.renderCategoryChart();
+                this.renderTaxChart();
+            }
+        } catch (error) {
+            console.error('Error rendering charts:', error);
         }
     }
 
@@ -1671,7 +1683,33 @@ class PaksaExpenseTracker {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.expenseTracker = new PaksaExpenseTracker();
+    try {
+        window.expenseTracker = new PaksaExpenseTracker();
+    } catch (error) {
+        console.error('Error initializing expense tracker:', error);
+        // Fallback initialization
+        window.expenseTracker = {
+            expenses: [],
+            income: [],
+            categories: [],
+            settings: {},
+            handleExport: function(format) {
+                alert('Export functionality is currently unavailable');
+            },
+            loadBudgetPage: function() {
+                console.log('Budget page loaded');
+            },
+            loadAnalytics: function() {
+                console.log('Analytics page loaded');
+            },
+            loadSettings: function() {
+                console.log('Settings page loaded');
+            },
+            loadExport: function() {
+                console.log('Export page loaded');
+            }
+        };
+    }
 });
 
 // Utility functions for responsive design and interactions

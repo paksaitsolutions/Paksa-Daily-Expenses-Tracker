@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export & Reports - Paksa Daily Expense</title>
+    <meta name="description" content="Export your expense data in multiple formats for tax preparation, accounting, and backup purposes. Generate comprehensive financial reports.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .export-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .export-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4299e1, #38a169, #d69e2e, #9f7aea);
+        }
+        
+        .export-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #4299e1;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+        
+        .animate-on-load {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .format-button {
+            transition: all 0.3s ease;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .format-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .format-button.selected {
+            border-color: #4299e1;
+            background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            height: 6px;
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+        
+        .report-preview {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .filter-chip {
+            transition: all 0.2s ease;
+        }
+        
+        .filter-chip:hover {
+            transform: scale(1.05);
+        }
+        
+        .filter-chip.active {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            <span class="text-blue-600">Paksa</span> Daily Expense
+                            <span class="text-sm font-normal text-gray-500">2025</span>
+                        </h1>
+                    </div>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="index.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</a>
+                        <a href="analytics.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Analytics</a>
+                        <a href="settings.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Settings</a>
+                        <a href="export.html" class="nav-link active text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium">Export</a>
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-gray-900 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+                <a href="index.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Dashboard</a>
+                <a href="analytics.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Analytics</a>
+                <a href="settings.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Settings</a>
+                <a href="export.html" class="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 rounded-md">Export</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Export & Reports</h1>
+                    <p class="text-gray-600 mt-2">Generate comprehensive reports and export your data for tax preparation and accounting</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Export Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-on-load">
+            <div class="export-card rounded-xl p-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Total Records</h3>
+                    <p id="totalRecords" class="text-3xl font-bold text-blue-600">0</p>
+                </div>
+            </div>
+            
+            <div class="export-card rounded-xl p-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Total Amount</h3>
+                    <p id="totalAmount" class="text-3xl font-bold text-green-600">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="export-card rounded-xl p-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Tax Deductible</h3>
+                    <p id="taxDeductibleAmount" class="text-3xl font-bold text-purple-600">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="export-card rounded-xl p-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Est. Tax Savings</h3>
+                    <p id="taxSavingsAmount" class="text-3xl font-bold text-amber-600">$0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Configuration -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Format Selection -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-on-load">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Export Format</h3>
+                    
+                    <div class="space-y-3">
+                        <button onclick="selectFormat('csv')" 
+                                class="format-button selected w-full p-4 rounded-lg text-left flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">CSV Spreadsheet</p>
+                                <p class="text-sm text-gray-500">Perfect for Excel and Google Sheets</p>
+                            </div>
+                        </button>
+                        
+                        <button onclick="selectFormat('pdf')" 
+                                class="format-button w-full p-4 rounded-lg text-left flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">PDF Report</p>
+                                <p class="text-sm text-gray-500">Professional tax-ready reports</p>
+                            </div>
+                        </button>
+                        
+                        <button onclick="selectFormat('json')" 
+                                class="format-button w-full p-4 rounded-lg text-left flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">JSON Data</p>
+                                <p class="text-sm text-gray-500">Raw data for developers and backup</p>
+                            </div>
+                        </button>
+                        
+                        <button onclick="selectFormat('xml')" 
+                                class="format-button w-full p-4 rounded-lg text-left flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">XML Format</p>
+                                <p class="text-sm text-gray-500">Compatible with accounting software</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters and Options -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-on-load">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Export Options</h3>
+                    
+                    <!-- Date Range -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Date Range</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="startDate" class="block text-xs text-gray-500 mb-1">Start Date</label>
+                                <input type="date" id="startDate" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label for="endDate" class="block text-xs text-gray-500 mb-1">End Date</label>
+                                <input type="date" id="endDate" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Category Filters -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Filter by Categories</label>
+                        <div class="flex flex-wrap gap-2" id="categoryFilters">
+                            <button class="filter-chip px-3 py-1 text-sm font-medium rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50" data-category="all">
+                                All Categories
+                            </button>
+                            <button class="filter-chip px-3 py-1 text-sm font-medium rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50" data-category="Business">
+                                Business
+                            </button>
+                            <button class="filter-chip px-3 py-1 text-sm font-medium rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50" data-category="Medical">
+                                Medical
+                            </button>
+                            <button class="filter-chip px-3 py-1 text-sm font-medium rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50" data-category="Travel">
+                                Travel
+                            </button>
+                            <button class="filter-chip px-3 py-1 text-sm font-medium rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50" data-category="Office">
+                                Office
+                            </button>
+                            <button class="filter-chip px-3 py-1 text-sm font-medium rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50" data-category="Personal">
+                                Personal
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tax Options -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Tax Report Options</label>
+                        <div class="space-y-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="includeTaxDeductible" checked 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <span class="ml-2 text-sm text-gray-700">Include only tax-deductible expenses</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="includeReceipts" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <span class="ml-2 text-sm text-gray-700">Include receipt references</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="includeSummary" checked 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <span class="ml-2 text-sm text-gray-700">Include summary statistics</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Button -->
+                    <div class="flex space-x-3">
+                        <button onclick="generateExport()" 
+                                class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                            Generate Export
+                        </button>
+                        <button onclick="resetExportOptions()" 
+                                class="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
+                            Reset Options
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Progress -->
+        <div id="exportProgress" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Export Progress</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">Preparing data...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="progressBar" class="progress-bar w-0"></div>
+                </div>
+                <p id="progressStatus" class="text-sm text-gray-500">Initializing export...</p>
+            </div>
+        </div>
+
+        <!-- Report Preview -->
+        <div id="reportPreview" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Report Preview</h3>
+            <div class="report-preview" id="previewContent">
+                <!-- Preview content will be loaded here -->
+            </div>
+            <div class="mt-4 flex space-x-3">
+                <button onclick="downloadExport()" 
+                        class="bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                    Download Report
+                </button>
+                <button onclick="closePreview()" 
+                        class="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                    Close Preview
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Export Templates -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 animate-on-load">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Quick Export Templates</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="quickExport('tax-summary')" 
+                        class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <h4 class="font-medium text-gray-900">Tax Summary</h4>
+                    </div>
+                    <p class="text-sm text-gray-500">Complete tax-deductible expense report for your accountant</p>
+                </button>
+                
+                <button onclick="quickExport('monthly-report')" 
+                        class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors text-left">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <h4 class="font-medium text-gray-900">Monthly Report</h4>
+                    </div>
+                    <p class="text-sm text-gray-500">Detailed monthly expense breakdown with analytics</p>
+                </button>
+                
+                <button onclick="quickExport('backup')" 
+                        class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors text-left">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                        </svg>
+                        <h4 class="font-medium text-gray-900">Full Backup</h4>
+                    </div>
+                    <p class="text-sm text-gray-500">Complete data backup including all settings and preferences</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Exports -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-on-load">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Recent Exports</h3>
+            
+            <div class="space-y-4" id="recentExports">
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">Tax Summary 2024</p>
+                            <p class="text-sm text-gray-500">CSV • 47 records • Dec 12, 2024</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-green-600 font-medium">Completed</span>
+                        <button class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">Monthly Report November</p>
+                            <p class="text-sm text-gray-500">PDF • 23 records • Dec 1, 2024</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-green-600 font-medium">Completed</span>
+                        <button class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">Complete Backup</p>
+                            <p class="text-sm text-gray-500">JSON • 89 records • Nov 28, 2024</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-green-600 font-medium">Completed</span>
+                        <button class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">
+                    <span class="text-blue-400">Paksa</span> Daily Expense
+                </h3>
+                <p class="text-gray-400 mb-6">Professional expense tracking for tax efficiency and financial organization.</p>
+                <div class="flex justify-center space-x-6 mb-8">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+                    <a href="analytics.html" class="text-gray-400 hover:text-white transition-colors">Analytics</a>
+                    <a href="settings.html" class="text-gray-400 hover:text-white transition-colors">Settings</a>
+                    <a href="export.html" class="text-gray-400 hover:text-white transition-colors">Export</a>
+                </div>
+                <p class="text-gray-500 text-sm">© 2025 Paksa IT Solutions. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load Main JavaScript -->
+    <script src="main.js"></script>
+    
+    <!-- Export Page Specific JavaScript -->
+    <script>
+        let selectedFormat = 'csv';
+        let selectedCategories = ['all'];
+        
+        function selectFormat(format) {
+            selectedFormat = format;
+            
+            // Update visual selection
+            document.querySelectorAll('.format-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.closest('.format-button').classList.add('selected');
+            
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            const previewContent = document.getElementById('previewContent');
+            const format = selectedFormat;
+            
+            if (window.expenseTracker) {
+                const expenses = window.expenseTracker.expenses.slice(0, 5); // Show first 5 records
+                
+                let preview = '';
+                
+                if (format === 'csv') {
+                    preview = 'Date,Amount,Category,Description,Tax Deductible,Tax Amount\n';
+                    expenses.forEach(expense => {
+                        preview += `${expense.date},$${expense.amount},${expense.category},"${expense.description || ''}",${expense.taxDeductible},$${expense.taxAmount || 0}\n`;
+                    });
+                } else if (format === 'json') {
+                    preview = JSON.stringify(expenses, null, 2);
+                } else if (format === 'xml') {
+                    preview = '<?xml version="1.0" encoding="UTF-8"?>\n<expenses>\n';
+                    expenses.forEach(expense => {
+                        preview += `  <expense>\n`;
+                        Object.entries(expense).forEach(([key, value]) => {
+                            preview += `    <${key}>${value}</${key}>\n`;
+                        });
+                        preview += `  </expense>\n`;
+                    });
+                    preview += '</expenses>';
+                }
+                
+                previewContent.textContent = preview;
+            }
+        }
+        
+        function generateExport() {
+            const exportProgress = document.getElementById('exportProgress');
+            const reportPreview = document.getElementById('reportPreview');
+            
+            // Hide preview and show progress
+            reportPreview.classList.add('hidden');
+            exportProgress.classList.remove('hidden');
+            
+            // Collect export options
+            const exportOptions = {
+                dateRange: {
+                    start: document.getElementById('startDate').value,
+                    end: document.getElementById('endDate').value
+                },
+                categories: selectedCategories,
+                includeTaxDeductible: document.getElementById('includeTaxDeductible').checked,
+                includeReceipts: document.getElementById('includeReceipts').checked,
+                includeSummary: document.getElementById('includeSummary').checked,
+                taxReport: selectedFormat === 'pdf'
+            };
+            
+            // Simulate export progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress > 100) progress = 100;
+                
+                document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    document.getElementById('progressStatus').textContent = 'Export completed!';
+                    
+                    // Use the proper export function from main.js
+                    if (window.expenseTracker) {
+                        try {
+                            window.expenseTracker.handleExport(selectedFormat, exportOptions);
+                            
+                            setTimeout(() => {
+                                exportProgress.classList.add('hidden');
+                                reportPreview.classList.remove('hidden');
+                                updatePreview();
+                            }, 1000);
+                        } catch (error) {
+                            document.getElementById('progressStatus').textContent = 'Export failed. Please try again.';
+                            console.error('Export error:', error);
+                        }
+                    }
+                } else if (progress > 80) {
+                    document.getElementById('progressStatus').textContent = 'Finalizing report...';
+                } else if (progress > 60) {
+                    document.getElementById('progressStatus').textContent = 'Formatting data...';
+                } else if (progress > 40) {
+                    document.getElementById('progressStatus').textContent = 'Processing expenses...';
+                } else if (progress > 20) {
+                    document.getElementById('progressStatus').textContent = 'Collecting data...';
+                }
+            }, 200);
+        }
+        
+        function downloadExport() {
+            if (window.expenseTracker) {
+                window.expenseTracker.handleExport(selectedFormat);
+            }
+        }
+        
+        function closePreview() {
+            document.getElementById('reportPreview').classList.add('hidden');
+        }
+        
+        function quickExport(template) {
+            // Set default dates
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            
+            // Set format based on template
+            if (template === 'tax-summary') {
+                selectFormat('pdf');
+                document.getElementById('includeTaxDeductible').checked = true;
+            } else if (template === 'monthly-report') {
+                selectFormat('csv');
+                document.getElementById('includeSummary').checked = true;
+            } else if (template === 'backup') {
+                selectFormat('json');
+            }
+            
+            // Generate export
+            generateExport();
+        }
+        
+        // Category filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterChips = document.querySelectorAll('.filter-chip');
+            filterChips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    if (this.dataset.category === 'all') {
+                        filterChips.forEach(c => c.classList.remove('active'));
+                        this.classList.add('active');
+                        selectedCategories = ['all'];
+                    } else {
+                        document.querySelector('[data-category="all"]').classList.remove('active');
+                        this.classList.toggle('active');
+                        
+                        if (this.classList.contains('active')) {
+                            if (selectedCategories.includes('all')) {
+                                selectedCategories = [this.dataset.category];
+                            } else {
+                                selectedCategories.push(this.dataset.category);
+                            }
+                        } else {
+                            selectedCategories = selectedCategories.filter(cat => cat !== this.dataset.category);
+                        }
+                        
+                        if (selectedCategories.length === 0) {
+                            document.querySelector('[data-category="all"]').classList.add('active');
+                            selectedCategories = ['all'];
+                        }
+                    }
+                });
+            });
+            
+            // Set default dates
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), 0, 1); // First day of year
+            
+            document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            
+            // Initialize summary
+            updateExportSummary();
+        });
+        
+        function updateExportSummary() {
+            if (window.expenseTracker) {
+                const totalRecords = window.expenseTracker.expenses.length;
+                const totalAmount = window.expenseTracker.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+                const taxDeductible = window.expenseTracker.expenses
+                    .filter(expense => expense.taxDeductible)
+                    .reduce((sum, expense) => sum + expense.amount, 0);
+                const taxSavings = taxDeductible * (window.expenseTracker.settings?.tax?.defaultTaxRate || 22) / 100;
+                
+                document.getElementById('totalRecords').textContent = totalRecords;
+                document.getElementById('totalAmount').textContent = formatCurrency(totalAmount);
+                document.getElementById('taxDeductibleAmount').textContent = formatCurrency(taxDeductible);
+                document.getElementById('taxSavingsAmount').textContent = formatCurrency(taxSavings);
+            }
+        }
+        
+        function formatCurrency(amount) {
+            const currency = window.expenseTracker?.settings?.app?.defaultCurrency || 'USD';
+            const symbols = {
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£',
+                'CAD': 'C$',
+                'AUD': 'A$',
+                'JPY': '¥',
+                'CHF': 'Fr',
+                'CNY': '¥'
+            };
+            return `${symbols[currency] || '$'}${amount.toFixed(2)}`;
+        }
+        
+        function resetExportOptions() {
+            // Reset form to default values
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('includeTaxDeductible').checked = true;
+            document.getElementById('includeReceipts').checked = false;
+            document.getElementById('includeSummary').checked = true;
+            
+            // Reset category filters
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            document.querySelector('[data-category="all"]').classList.add('active');
+            selectedCategories = ['all'];
+            
+            // Reset format selection
+            document.querySelectorAll('.format-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector('[onclick="selectFormat(\'csv\')"]').classList.add('selected');
+            selectedFormat = 'csv';
+            
+            // Hide preview and progress
+            document.getElementById('reportPreview').classList.add('hidden');
+            document.getElementById('exportProgress').classList.add('hidden');
+            
+            // Reset dates to current year
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), 0, 1);
+            document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+            
+            alert('Export options have been reset to defaults!');
+        }
+        
+        // Update summary when data changes
+        setTimeout(updateExportSummary, 1000);
+    </script>
+</body>

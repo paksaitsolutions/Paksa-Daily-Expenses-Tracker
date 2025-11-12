@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Paksa Daily Expense</title>
+    <meta name="description" content="Paksa Daily Expense Settings - Customize your financial management experience by Paksa IT Solutions. Manage categories, configure tax settings, and personalize preferences.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .settings-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .settings-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #4299e1;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+        
+        .animate-on-load {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4299e1;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .color-picker:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .category-item {
+            transition: all 0.3s ease;
+        }
+        
+        .category-item:hover {
+            transform: translateX(4px);
+            background-color: #f8fafc;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(66, 153, 225, 0.3);
+        }
+        
+        .danger-zone {
+            border: 2px dashed #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+        
+        .success-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            <span class="text-blue-600">Paksa</span> Daily Expense
+                            <span class="text-sm font-normal text-gray-500">2025</span>
+                        </h1>
+                    </div>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="index.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</a>
+                        <a href="analytics.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Analytics</a>
+                        <a href="settings.html" class="nav-link active text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium">Settings</a>
+                        <a href="export.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Export</a>
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-gray-900 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+                <a href="index.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Dashboard</a>
+                <a href="analytics.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Analytics</a>
+                <a href="settings.html" class="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 rounded-md">Settings</a>
+                <a href="export.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Export</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+                    <p class="text-gray-600 mt-2">Customize your expense tracking experience and manage preferences</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Success Message -->
+        <div id="successMessage" class="success-message">
+            Settings saved successfully!
+        </div>
+
+        <!-- Profile Settings -->
+        <div class="settings-card rounded-xl p-6 mb-8 animate-on-load">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Profile Information</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Enter your full name">
+                </div>
+                
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input type="email" id="email" name="email" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Enter your email">
+                </div>
+                
+                <div>
+                    <label for="businessName" class="block text-sm font-medium text-gray-700 mb-2">Business Name (Optional)</label>
+                    <input type="text" id="businessName" name="businessName" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Your business or company name">
+                </div>
+                
+                <div>
+                    <label for="taxId" class="block text-sm font-medium text-gray-700 mb-2">Tax ID (Optional)</label>
+                    <input type="text" id="taxId" name="taxId" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Social Security Number or EIN">
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Management -->
+        <div class="settings-card rounded-xl p-6 mb-8 animate-on-load">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-gray-900">Expense Categories</h2>
+                <button onclick="openAddCategoryModal()" 
+                        class="btn-primary text-white px-4 py-2 rounded-lg font-medium">
+                    Add Category
+                </button>
+            </div>
+            
+            <div class="space-y-3" id="categoryList">
+                <div class="category-item flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="color-picker" style="background-color: #4299e1;"></div>
+                        <div>
+                            <p class="font-medium text-gray-900">Business</p>
+                            <p class="text-sm text-gray-500">Tax deductible • 22% tax rate</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-green-600 font-medium">Active</span>
+                        <button onclick="editCategory('Business')" class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="category-item flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="color-picker" style="background-color: #38a169;"></div>
+                        <div>
+                            <p class="font-medium text-gray-900">Medical</p>
+                            <p class="text-sm text-gray-500">Tax deductible • 22% tax rate</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-green-600 font-medium">Active</span>
+                        <button onclick="editCategory('Medical')" class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="category-item flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="color-picker" style="background-color: #d69e2e;"></div>
+                        <div>
+                            <p class="font-medium text-gray-900">Travel</p>
+                            <p class="text-sm text-gray-500">Tax deductible • 22% tax rate</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-green-600 font-medium">Active</span>
+                        <button onclick="editCategory('Travel')" class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="category-item flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="color-picker" style="background-color: #718096;"></div>
+                        <div>
+                            <p class="font-medium text-gray-900">Personal</p>
+                            <p class="text-sm text-gray-500">Not tax deductible</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-500 font-medium">Active</span>
+                        <button onclick="editCategory('Personal')" class="text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tax Settings -->
+        <div class="settings-card rounded-xl p-6 mb-8 animate-on-load">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Tax Configuration</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="defaultTaxRate" class="block text-sm font-medium text-gray-700 mb-2">Default Tax Rate (%)</label>
+                    <input type="number" id="defaultTaxRate" name="defaultTaxRate" value="22" step="0.1" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Applied to tax-deductible expenses for savings calculations</p>
+                </div>
+                
+                <div>
+                    <label for="taxYear" class="block text-sm font-medium text-gray-700 mb-2">Tax Year</label>
+                    <select id="taxYear" name="taxYear" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                        <option value="2021">2021</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filingStatus" class="block text-sm font-medium text-gray-700 mb-2">Filing Status</label>
+                    <select id="filingStatus" name="filingStatus" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="single">Single</option>
+                        <option value="married_joint">Married Filing Jointly</option>
+                        <option value="married_separate">Married Filing Separately</option>
+                        <option value="head_household">Head of Household</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="stateTaxRate" class="block text-sm font-medium text-gray-700 mb-2">State Tax Rate (%)</label>
+                    <input type="number" id="stateTaxRate" name="stateTaxRate" value="0" step="0.1" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">For combined federal and state tax calculations</p>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Auto-categorize tax-deductible expenses</h3>
+                        <p class="text-xs text-gray-500">Automatically mark common business expenses as tax deductible</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoCategorize" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Tax savings notifications</h3>
+                        <p class="text-xs text-gray-500">Get alerts about potential tax savings opportunities</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="taxNotifications" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Standard deduction optimizer</h3>
+                        <p class="text-xs text-gray-500">Track when itemized deductions exceed standard deduction</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="standardDeductionOptimizer" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Preferences -->
+        <div class="settings-card rounded-xl p-6 mb-8 animate-on-load">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">App Preferences</h2>
+            
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="defaultCurrency" class="block text-sm font-medium text-gray-700 mb-2">Default Currency</label>
+                        <select id="defaultCurrency" name="defaultCurrency" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="USD">USD ($) - US Dollar</option>
+                            <option value="EUR">EUR (€) - Euro</option>
+                            <option value="GBP">GBP (£) - British Pound</option>
+                            <option value="CAD">CAD (C$) - Canadian Dollar</option>
+                            <option value="AUD">AUD (A$) - Australian Dollar</option>
+                            <option value="JPY">JPY (¥) - Japanese Yen</option>
+                            <option value="CHF">CHF (Fr) - Swiss Franc</option>
+                            <option value="CNY">CNY (¥) - Chinese Yuan</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="dateFormat" class="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
+                        <select id="dateFormat" name="dateFormat" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
+                            <option value="DD/MM/YYYY">DD/MM/YYYY (International)</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
+                            <option value="DD.MM.YYYY">DD.MM.YYYY (European)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="timeZone" class="block text-sm font-medium text-gray-700 mb-2">Time Zone</label>
+                        <select id="timeZone" name="timeZone" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="local">Local Time Zone</option>
+                            <option value="UTC">UTC</option>
+                            <option value="EST">Eastern Time (EST)</option>
+                            <option value="PST">Pacific Time (PST)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="language" class="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                        <select id="language" name="language" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="zh">中文</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Dark Mode</h3>
+                        <p class="text-xs text-gray-500">Switch to dark theme for better night viewing</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkMode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Auto-save expenses</h3>
+                        <p class="text-xs text-gray-500">Automatically save expenses as you type</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoSave" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Show spending insights</h3>
+                        <p class="text-xs text-gray-500">Display personalized spending analysis and tips</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spendingInsights" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Sound notifications</h3>
+                        <p class="text-xs text-gray-500">Play sounds for successful actions</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="soundNotifications" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Compact mode</h3>
+                        <p class="text-xs text-gray-500">Show more data in less space</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="compactMode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Settings -->
+        <div class="settings-card rounded-xl p-6 mb-8 animate-on-load">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Export Preferences</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="defaultExportFormat" class="block text-sm font-medium text-gray-700 mb-2">Default Export Format</label>
+                    <select id="defaultExportFormat" name="defaultExportFormat" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="csv">CSV Spreadsheet</option>
+                        <option value="pdf">PDF Report</option>
+                        <option value="json">JSON Data</option>
+                        <option value="xml">XML Format</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="defaultDateRange" class="block text-sm font-medium text-gray-700 mb-2">Default Date Range</label>
+                    <select id="defaultDateRange" name="defaultDateRange" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="monthly">This Month</option>
+                        <option value="quarterly">This Quarter</option>
+                        <option value="yearly">This Year</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Include receipt references</h3>
+                        <p class="text-xs text-gray-500">Add receipt information to export files</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="includeReceipts">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Include summary statistics</h3>
+                        <p class="text-xs text-gray-500">Add summary data to exports</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="includeSummary" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700">Auto-generate tax reports</h3>
+                        <p class="text-xs text-gray-500">Create tax-ready reports by default</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoTaxReports" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="settings-card rounded-xl p-6 mb-8 animate-on-load">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Data Management</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Backup Data</h3>
+                    <p class="text-sm text-gray-500 mb-4">Create a backup of all your expense data</p>
+                    <button onclick="backupData()" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        Create Backup
+                    </button>
+                </div>
+                
+                <div class="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Import Data</h3>
+                    <p class="text-sm text-gray-500 mb-4">Import expenses from CSV or JSON file</p>
+                    <button onclick="document.getElementById('importFile').click()" 
+                            class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                        Import Data
+                    </button>
+                    <input type="file" id="importFile" accept=".csv,.json" class="hidden" onchange="importData(this)">
+                </div>
+                
+                <div class="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Sync Settings</h3>
+                    <p class="text-sm text-gray-500 mb-4">Export/import app settings only</p>
+                    <button onclick="exportSettings()" 
+                            class="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                        Export Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="danger-zone rounded-xl p-6 animate-on-load">
+            <h2 class="text-xl font-semibold text-red-900 mb-6">Danger Zone</h2>
+            <p class="text-red-700 mb-6">These actions cannot be undone. Please proceed with caution.</p>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-4 bg-white rounded-lg">
+                    <div>
+                        <h3 class="font-medium text-gray-900">Clear All Data</h3>
+                        <p class="text-sm text-gray-500">Permanently delete all expenses and reset the app</p>
+                    </div>
+                    <button onclick="confirmClearAllData()" 
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors">
+                        Clear All Data
+                    </button>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-white rounded-lg">
+                    <div>
+                        <h3 class="font-medium text-gray-900">Reset Settings</h3>
+                        <p class="text-sm text-gray-500">Restore all settings to their default values</p>
+                    </div>
+                    <button onclick="confirmResetSettings()" 
+                            class="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors">
+                        Reset Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="mt-8 text-center">
+            <button onclick="saveSettings()" 
+                    class="btn-primary text-white px-8 py-3 rounded-lg font-semibold text-lg">
+                Save All Settings
+            </button>
+        </div>
+    </main>
+
+    <!-- Add Category Modal -->
+    <div id="addCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Add New Category</h3>
+            
+            <form id="categoryForm" class="space-y-4">
+                <div>
+                    <label for="categoryName" class="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                    <input type="text" id="categoryName" name="categoryName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Enter category name">
+                </div>
+                
+                <div>
+                    <label for="categoryColor" class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                    <div class="flex space-x-2">
+                        <div class="color-picker" style="background-color: #4299e1;" onclick="selectColor('#4299e1')"></div>
+                        <div class="color-picker" style="background-color: #38a169;" onclick="selectColor('#38a169')"></div>
+                        <div class="color-picker" style="background-color: #d69e2e;" onclick="selectColor('#d69e2e')"></div>
+                        <div class="color-picker" style="background-color: #9f7aea;" onclick="selectColor('#9f7aea')"></div>
+                        <div class="color-picker" style="background-color: #f56565;" onclick="selectColor('#f56565')"></div>
+                        <div class="color-picker" style="background-color: #718096;" onclick="selectColor('#718096')"></div>
+                    </div>
+                    <input type="hidden" id="selectedColor" name="selectedColor" value="#4299e1">
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="isTaxDeductible" name="isTaxDeductible" checked
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="isTaxDeductible" class="ml-2 block text-sm text-gray-700">
+                        This category is tax deductible
+                    </label>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" onclick="closeAddCategoryModal()" 
+                            class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 btn-primary text-white py-2 px-4 rounded-lg font-medium">
+                        Add Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">
+                    <span class="text-blue-400">Paksa</span> Daily Expense
+                </h3>
+                <p class="text-gray-400 mb-6">Professional expense tracking for tax efficiency and financial organization.</p>
+                <div class="flex justify-center space-x-6 mb-8">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+                    <a href="analytics.html" class="text-gray-400 hover:text-white transition-colors">Analytics</a>
+                    <a href="settings.html" class="text-gray-400 hover:text-white transition-colors">Settings</a>
+                    <a href="export.html" class="text-gray-400 hover:text-white transition-colors">Export</a>
+                </div>
+                <p class="text-gray-500 text-sm">© 2025 Paksa IT Solutions. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load Main JavaScript -->
+    <script src="main.js"></script>
+    
+    <!-- Settings Page Specific JavaScript -->
+    <script>
+        let selectedColor = '#4299e1';
+        
+        function selectColor(color) {
+            selectedColor = color;
+            document.getElementById('selectedColor').value = color;
+            
+            // Update visual selection
+            document.querySelectorAll('.color-picker').forEach(picker => {
+                picker.style.border = '2px solid #e2e8f0';
+            });
+            
+            event.target.style.border = '2px solid #1a365d';
+        }
+        
+        function openAddCategoryModal() {
+            document.getElementById('addCategoryModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeAddCategoryModal() {
+            document.getElementById('addCategoryModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            document.getElementById('categoryForm').reset();
+            selectedColor = '#4299e1';
+        }
+        
+        function editCategory(categoryName) {
+            alert(`Edit functionality for ${categoryName} would be implemented here`);
+        }
+        
+        function saveSettings() {
+            // Collect all settings
+            const settings = {
+                profile: {
+                    fullName: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    businessName: document.getElementById('businessName').value,
+                    taxId: document.getElementById('taxId').value,
+                    currency: document.getElementById('defaultCurrency').value,
+                    dateFormat: document.getElementById('dateFormat').value
+                },
+                tax: {
+                    defaultTaxRate: parseFloat(document.getElementById('defaultTaxRate').value),
+                    taxYear: parseInt(document.getElementById('taxYear').value),
+                    filingStatus: document.getElementById('filingStatus').value,
+                    stateTaxRate: parseFloat(document.getElementById('stateTaxRate').value),
+                    autoCategorize: document.getElementById('autoCategorize').checked,
+                    taxNotifications: document.getElementById('taxNotifications').checked,
+                    standardDeductionOptimizer: document.getElementById('standardDeductionOptimizer').checked
+                },
+                app: {
+                    darkMode: document.getElementById('darkMode').checked,
+                    autoSave: document.getElementById('autoSave').checked,
+                    spendingInsights: document.getElementById('spendingInsights').checked,
+                    soundNotifications: document.getElementById('soundNotifications').checked,
+                    compactMode: document.getElementById('compactMode').checked,
+                    defaultCurrency: document.getElementById('defaultCurrency').value,
+                    dateFormat: document.getElementById('dateFormat').value,
+                    timeZone: document.getElementById('timeZone').value,
+                    language: document.getElementById('language').value
+                },
+                export: {
+                    defaultFormat: document.getElementById('defaultExportFormat').value,
+                    defaultDateRange: document.getElementById('defaultDateRange').value,
+                    includeReceipts: document.getElementById('includeReceipts').checked,
+                    includeSummary: document.getElementById('includeSummary').checked,
+                    autoTaxReports: document.getElementById('autoTaxReports').checked
+                }
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('appSettings', JSON.stringify(settings));
+            
+            // Show success message
+            const successMessage = document.getElementById('successMessage');
+            successMessage.classList.add('show');
+            
+            setTimeout(() => {
+                successMessage.classList.remove('show');
+            }, 3000);
+            
+            // Animate save button
+            if (typeof anime !== 'undefined') {
+                anime({
+                    targets: 'button[onclick="saveSettings()"]',
+                    scale: [1, 0.95, 1],
+                    duration: 200,
+                    easing: 'easeInOutQuad'
+                });
+            }
+        }
+        
+        function backupData() {
+            if (window.expenseTracker) {
+                const backup = {
+                    expenses: window.expenseTracker.expenses,
+                    settings: JSON.parse(localStorage.getItem('appSettings') || '{}'),
+                    categories: window.expenseTracker.categories,
+                    exportDate: new Date().toISOString()
+                };
+                
+                const dataStr = JSON.stringify(backup, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `expense-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                alert('Backup created successfully!');
+            }
+        }
+        
+        function exportSettings() {
+            const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+            const settingsStr = JSON.stringify(settings, null, 2);
+            const settingsBlob = new Blob([settingsStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(settingsBlob);
+            link.download = `expense-tracker-settings-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            alert('Settings exported successfully!');
+        }
+        
+        function importData(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.expenses && Array.isArray(data.expenses)) {
+                            localStorage.setItem('expenses', JSON.stringify(data.expenses));
+                            if (data.settings) {
+                                localStorage.setItem('appSettings', JSON.stringify(data.settings));
+                            }
+                            alert('Data imported successfully! Please refresh the page.');
+                        } else {
+                            alert('Invalid backup file format');
+                        }
+                    } catch (error) {
+                        alert('Error reading backup file');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+        
+        function confirmClearAllData() {
+            if (confirm('Are you sure you want to delete all your expense data? This action cannot be undone.')) {
+                if (confirm('This will permanently delete ALL your expenses, categories, and settings. Are you absolutely sure?')) {
+                    localStorage.clear();
+                    alert('All data has been cleared. The page will now refresh.');
+                    window.location.reload();
+                }
+            }
+        }
+        
+        function confirmResetSettings() {
+            if (confirm('Are you sure you want to reset all settings to their default values?')) {
+                localStorage.removeItem('appSettings');
+                alert('Settings have been reset. The page will now refresh.');
+                window.location.reload();
+            }
+        }
+        
+        // Load existing settings
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedSettings = localStorage.getItem('appSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                
+                // Load profile settings
+                if (settings.profile) {
+                    document.getElementById('fullName').value = settings.profile.fullName || '';
+                    document.getElementById('email').value = settings.profile.email || '';
+                    document.getElementById('businessName').value = settings.profile.businessName || '';
+                    document.getElementById('taxId').value = settings.profile.taxId || '';
+                }
+                
+                // Load tax settings
+                if (settings.tax) {
+                    document.getElementById('defaultTaxRate').value = settings.tax.defaultTaxRate || '22';
+                    document.getElementById('taxYear').value = settings.tax.taxYear || '2024';
+                    document.getElementById('filingStatus').value = settings.tax.filingStatus || 'single';
+                    document.getElementById('stateTaxRate').value = settings.tax.stateTaxRate || '0';
+                    document.getElementById('autoCategorize').checked = settings.tax.autoCategorize !== false;
+                    document.getElementById('taxNotifications').checked = settings.tax.taxNotifications !== false;
+                    document.getElementById('standardDeductionOptimizer').checked = settings.tax.standardDeductionOptimizer !== false;
+                }
+                
+                // Load app settings
+                if (settings.app) {
+                    document.getElementById('darkMode').checked = settings.app.darkMode || false;
+                    document.getElementById('autoSave').checked = settings.app.autoSave !== false;
+                    document.getElementById('spendingInsights').checked = settings.app.spendingInsights !== false;
+                    document.getElementById('soundNotifications').checked = settings.app.soundNotifications !== false;
+                    document.getElementById('compactMode').checked = settings.app.compactMode || false;
+                    document.getElementById('defaultCurrency').value = settings.app.defaultCurrency || 'USD';
+                    document.getElementById('dateFormat').value = settings.app.dateFormat || 'MM/DD/YYYY';
+                    document.getElementById('timeZone').value = settings.app.timeZone || 'local';
+                    document.getElementById('language').value = settings.app.language || 'en';
+                }

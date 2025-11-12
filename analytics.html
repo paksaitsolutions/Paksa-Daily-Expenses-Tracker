@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Paksa Daily Expense</title>
+    <meta name="description" content="Paksa Daily Expense Analytics - Comprehensive financial analytics and tax reporting dashboard by Paksa IT Solutions. Visualize expenses, track deductions, and optimize tax strategy.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4299e1, #38a169);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #4299e1;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+        
+        .animate-on-load {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .filter-button {
+            transition: all 0.2s ease;
+        }
+        
+        .filter-button:hover {
+            transform: translateY(-1px);
+        }
+        
+        .filter-button.active {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+        }
+        
+        .insights-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .insights-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(180deg); }
+        }
+        
+        .tax-calculator {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            height: 8px;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            <span class="text-blue-600">Paksa</span> Daily Expense
+                            <span class="text-sm font-normal text-gray-500">2025</span>
+                        </h1>
+                    </div>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="index.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</a>
+                        <a href="analytics.html" class="nav-link active text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium">Analytics</a>
+                        <a href="settings.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Settings</a>
+                        <a href="export.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Export</a>
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-gray-900 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+                <a href="index.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Dashboard</a>
+                <a href="analytics.html" class="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 rounded-md">Analytics</a>
+                <a href="settings.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Settings</a>
+                <a href="export.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Export</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+                    <p class="text-gray-600 mt-2">Comprehensive insights into your expenses and tax optimization opportunities</p>
+                </div>
+                
+                <!-- Time Period Filter -->
+                <div class="mt-4 sm:mt-0 flex items-center space-x-2">
+                    <button class="filter-button active px-4 py-2 text-sm font-medium rounded-lg border border-gray-300" data-period="month">
+                        This Month
+                    </button>
+                    <button class="filter-button px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-600" data-period="quarter">
+                        This Quarter
+                    </button>
+                    <button class="filter-button px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-600" data-period="year">
+                        This Year
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Analytics Summary -->
+        <div id="analyticsSummary" class="mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-on-load">
+                <div class="metric-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Expenses</p>
+                            <p class="text-3xl font-bold text-gray-900">$0.00</p>
+                            <p class="text-sm text-green-600 mt-1">+12% from last month</p>
+                        </div>
+                        <div class="p-3 bg-blue-100 rounded-full">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metric-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Tax Deductible</p>
+                            <p class="text-3xl font-bold text-gray-900">$0.00</p>
+                            <p class="text-sm text-green-600 mt-1">68% of total expenses</p>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-full">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metric-card rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Est. Tax Savings</p>
+                            <p class="text-3xl font-bold text-gray-900">$0.00</p>
+                            <p class="text-sm text-blue-600 mt-1">Based on 22% tax rate</p>
+                        </div>
+                        <div class="p-3 bg-purple-100 rounded-full">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Monthly Expenses Chart -->
+            <div class="chart-container p-6 animate-on-load">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Monthly Expense Trends</h3>
+                <div id="expenseChart" style="height: 300px;"></div>
+            </div>
+            
+            <!-- Category Breakdown Chart -->
+            <div class="chart-container p-6 animate-on-load">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Expenses by Category</h3>
+                <div id="categoryChart" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <!-- Full Width Tax Chart -->
+        <div class="chart-container p-6 mb-8 animate-on-load">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Tax Deductible vs Non-Deductible Expenses</h3>
+            <div id="taxChart" style="height: 400px;"></div>
+        </div>
+
+        <!-- Insights and Calculator Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- AI Insights -->
+            <div class="insights-card rounded-xl p-8 animate-on-load">
+                <h3 class="text-xl font-semibold mb-6">Smart Insights</h3>
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-2 h-2 bg-white rounded-full mt-2"></div>
+                        <div>
+                            <p class="font-medium">Tax Optimization Opportunity</p>
+                            <p class="text-sm text-blue-100">You're spending 23% more on tax-deductible expenses this month. Consider tracking home office costs.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="w-2 h-2 bg-white rounded-full mt-2"></div>
+                        <div>
+                            <p class="font-medium">Spending Pattern Alert</p>
+                            <p class="text-sm text-blue-100">Business travel expenses have increased by 45% this quarter. Document mileage for additional deductions.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="w-2 h-2 bg-white rounded-full mt-2"></div>
+                        <div>
+                            <p class="font-medium">Deduction Maximizer</p>
+                            <p class="text-sm text-blue-100">You could save an additional $340 by properly categorizing office supplies and professional development.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tax Calculator -->
+            <div class="tax-calculator rounded-xl p-8 animate-on-load">
+                <h3 class="text-xl font-semibold mb-6">Tax Savings Calculator</h3>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tax Deductible Expenses</label>
+                        <input type="number" id="deductibleAmount" value="0" step="0.01" 
+                               class="w-full px-4 py-2 rounded-lg text-gray-900" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tax Rate (%)</label>
+                        <input type="number" id="taxRate" value="22" step="0.1" 
+                               class="w-full px-4 py-2 rounded-lg text-gray-900" placeholder="22">
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium">Estimated Tax Savings</span>
+                            <span id="taxSavings" class="text-xl font-bold">$0.00</span>
+                        </div>
+                        <div class="w-full bg-white bg-opacity-30 rounded-full h-2">
+                            <div id="savingsProgress" class="progress-bar w-0"></div>
+                        </div>
+                    </div>
+                    <button onclick="calculateTaxSavings()" 
+                            class="w-full bg-white text-purple-600 py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                        Calculate Savings
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analytics Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-on-load">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Detailed Expense Breakdown</h3>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Deductible</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
+                        </tr>
+                    </thead>
+                    <tbody id="analyticsTable" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Business</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">0%</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ↗ Stable
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Medical</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">0%</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    → New
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Travel</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">0%</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                    ↗ Growing
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Office</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$0.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">0%</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    → Stable
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8 animate-on-load">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Export Analytics Report</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="expenseTracker.handleExport('pdf')" 
+                        class="flex items-center justify-center space-x-2 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>PDF Report</span>
+                </button>
+                
+                <button onclick="expenseTracker.handleExport('csv')" 
+                        class="flex items-center justify-center space-x-2 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>CSV Data</span>
+                </button>
+                
+                <button onclick="expenseTracker.handleExport('json')" 
+                        class="flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    <span>JSON Export</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">
+                    <span class="text-blue-400">Paksa</span> Daily Expense
+                </h3>
+                <p class="text-gray-400 mb-6">Professional expense tracking for tax efficiency and financial organization.</p>
+                <div class="flex justify-center space-x-6 mb-8">
+                    <a href="index.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
+                    <a href="analytics.html" class="text-gray-400 hover:text-white transition-colors">Analytics</a>
+                    <a href="settings.html" class="text-gray-400 hover:text-white transition-colors">Settings</a>
+                    <a href="export.html" class="text-gray-400 hover:text-white transition-colors">Export</a>
+                </div>
+                <p class="text-gray-500 text-sm">© 2025 Paksa IT Solutions. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load Main JavaScript -->
+    <script src="main.js"></script>
+    
+    <!-- Analytics Page Specific JavaScript -->
+    <script>
+        // Tax Calculator Function
+        function calculateTaxSavings() {
+            const deductibleAmount = parseFloat(document.getElementById('deductibleAmount').value) || 0;
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 22;
+            const taxSavings = deductibleAmount * (taxRate / 100);
+            
+            document.getElementById('taxSavings').textContent = `$${taxSavings.toFixed(2)}`;
+            
+            // Animate progress bar
+            const maxSavings = 10000; // Assume max $10k for percentage calculation
+            const percentage = Math.min((taxSavings / maxSavings) * 100, 100);
+            document.getElementById('savingsProgress').style.width = percentage + '%';
+            
+            // Animate the savings amount
+            if (typeof anime !== 'undefined') {
+                anime({
+                    targets: '#taxSavings',
+                    scale: [1.2, 1],
+                    duration: 300,
+                    easing: 'easeOutBack'
+                });
+            }
+        }
+        
+        // Filter button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButtons = document.querySelectorAll('.filter-button');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update charts based on selected period
+                    const period = this.dataset.period;
+                    updateChartsForPeriod(period);
+                });
+            });
+        });
+        
+        function updateChartsForPeriod(period) {
+            // This would update the charts based on the selected time period
+            console.log('Updating charts for period:', period);
+            
+            // Re-render charts with new data
+            if (window.expenseTracker && typeof echarts !== 'undefined') {
+                window.expenseTracker.renderCharts();
+            }
+        }
+        
+        // Initialize tax calculator with current data
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                if (window.expenseTracker) {
+                    const taxDeductible = window.expenseTracker.expenses
+                        .filter(expense => expense.taxDeductible)
+                        .reduce((sum, expense) => sum + expense.amount, 0);
+                    
+                    document.getElementById('deductibleAmount').value = taxDeductible.toFixed(2);
+                    calculateTaxSavings();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

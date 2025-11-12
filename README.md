@@ -1,6 +1,6 @@
-# Paksa Daily Expense - Complete Financial Management Solution
+# Paksa Daily Expense - Complete Pocket Accountant
 
-A comprehensive daily expenses record application designed for income tax returns and financial management by Paksa IT Solutions.
+A comprehensive pocket accountant application with income tracking, expense management, financial analytics, and tax optimization by Paksa IT Solutions.
 
 ## 🚀 Live Application
 
@@ -10,11 +10,12 @@ A comprehensive daily expenses record application designed for income tax return
 
 ## ✨ Features
 
-### Core Functionality
-- **Daily Expense Tracking**: Record expenses with categories, tax deductibility, and payment methods
-- **Real-time Calculations**: Instant updates of totals, tax savings, and summaries
-- **Smart Categorization**: Automatic categorization and tax deductibility detection
-- **Data Persistence**: Local storage for privacy and offline access
+### Core Accounting Features
+- **Income & Expense Tracking**: Complete financial transaction recording with categories and tax implications
+- **Real-time Financial Calculations**: Instant net worth, profit/loss, and cash flow analysis
+- **Account Management**: Multiple account tracking with automatic balance updates
+- **Financial Statements**: Balance sheet and income statement generation
+- **Budget Tracking**: Set and monitor budgets with variance analysis
 
 ### Tax Optimization
 - **Tax Deductible Tracking**: Mark expenses as tax deductible with automatic calculations
@@ -37,29 +38,34 @@ A comprehensive daily expenses record application designed for income tax return
 ## 📱 Pages
 
 ### 1. Dashboard (index.html)
-- **Quick Expense Entry**: Fast expense recording with smart defaults
-- **Live Expense List**: Real-time filtering and search functionality
-- **Summary Cards**: Key metrics including totals, tax deductible amounts, and savings
-- **Interactive Elements**: Smooth animations and micro-interactions
+- **Income & Expense Entry**: Record both income and expenses with comprehensive details
+- **Financial Summary**: Real-time net worth, total income, expenses, and tax savings
+- **Live Transaction List**: Real-time filtering and search functionality
+- **Account Balance Tracking**: Automatic balance updates across multiple accounts
 
 ### 2. Analytics (analytics.html)
-- **Comprehensive Charts**: Monthly trends, category breakdown, tax analysis
+- **Financial Charts**: Income vs expenses, category breakdown, tax analysis
+- **Profit & Loss Analysis**: Monthly and yearly financial performance
 - **Tax Calculator**: Interactive tool for estimating tax savings
-- **Smart Insights**: AI-powered recommendations and alerts
-- **Export Options**: Direct access to report generation
+- **Smart Insights**: AI-powered financial recommendations
 
-### 3. Settings (settings.html)
+### 3. Budget Management (budget.html)
+- **Category Budgets**: Set and track budgets for each expense category
+- **Budget vs Actual**: Visual progress bars showing spending against budgets
+- **Budget Alerts**: Warnings when approaching or exceeding budget limits
+- **Monthly Budget Overview**: Complete budget performance dashboard
+
+### 4. Settings (settings.html)
 - **Profile Management**: Personal and business information
+- **Account Configuration**: Multiple account setup and management
 - **Tax Configuration**: Tax rates, filing status, and optimization settings
-- **App Preferences**: Currency, date format, language, and theme options
-- **Category Management**: Custom expense categories with color coding
-- **Data Management**: Backup, import, and sync functionality
+- **Category Management**: Custom income and expense categories
 
-### 4. Export (export.html)
-- **Format Selection**: Choose from CSV, PDF, JSON, or XML formats
-- **Advanced Filtering**: Date range, category, and tax status filters
-- **Preview Functionality**: Preview exports before downloading
-- **Quick Templates**: Pre-configured export templates for common use cases
+### 5. Export (export.html)
+- **Financial Reports**: Balance sheets, income statements, tax reports
+- **Multiple Formats**: CSV, PDF, JSON, XML export options
+- **Advanced Filtering**: Date range, category, and account filters
+- **Professional Reports**: Tax-ready and accountant-friendly formats
 
 ## ⚙️ Settings Options
 
@@ -96,10 +102,10 @@ A comprehensive daily expenses record application designed for income tax return
 - **Tailwind CSS**: Responsive design framework
 
 ### Data Management
-- **Local Storage**: Privacy-focused data persistence
-- **JSON Structure**: Flexible and portable data format
+- **IndexedDB**: Advanced offline database with fallback to localStorage
+- **Real-time Sync**: Automatic data synchronization and backup
 - **Export/Import**: Full data portability and backup
-- **Real-time Updates**: Instant UI updates on data changes
+- **Offline Support**: Complete functionality without internet connection
 
 ### User Experience
 - **Responsive Design**: Mobile-optimized interface
@@ -156,25 +162,29 @@ A comprehensive daily expenses record application designed for income tax return
 
 ## 🎯 Use Cases
 
-### Individual Taxpayers
-- Track personal and business expenses
-- Maximize tax deductions
-- Prepare for tax season
+### Individual Users
+- Complete personal financial management
+- Income and expense tracking
+- Budget planning and monitoring
+- Tax optimization and preparation
 
 ### Small Business Owners
-- Manage business expenses
-- Separate personal and business spending
-- Generate reports for accounting
+- Business income and expense management
+- Profit and loss tracking
+- Cash flow analysis
+- Professional financial reports
 
 ### Freelancers & Contractors
-- Track project-related expenses
-- Manage multiple income sources
-- Optimize tax strategies
+- Project-based income tracking
+- Business expense categorization
+- Tax deduction optimization
+- Client billing support
 
 ### Financial Planning
-- Monitor spending patterns
-- Budget analysis and planning
-- Long-term financial tracking
+- Net worth tracking
+- Budget vs actual analysis
+- Financial goal monitoring
+- Investment and savings planning
 
 ## 🔒 Privacy & Security
 
@@ -193,6 +203,6 @@ A comprehensive daily expenses record application designed for income tax return
 
 ---
 
-**Paksa Daily Expense** - Your complete solution for expense tracking, tax optimization, and financial management.
+**Paksa Daily Expense** - Your complete pocket accountant for comprehensive financial management, income tracking, budgeting, and tax optimization.
 
 **Copyright © 2025 Paksa IT Solutions. All rights reserved.**

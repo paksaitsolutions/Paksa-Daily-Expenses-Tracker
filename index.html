@@ -9,6 +9,12 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Database -->
+    <script src="db.js"></script>
+    
     <!-- Core Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
@@ -146,10 +152,10 @@
                 <!-- Logo -->
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <h1 class="text-2xl font-bold text-gray-900">
+                        <a href="index.html" class="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
                             <span class="text-blue-600">Paksa</span> Daily Expense
                             <span class="text-sm font-normal text-gray-500">2025</span>
-                        </h1>
+                        </a>
                     </div>
                 </div>
                 
@@ -158,6 +164,7 @@
                     <div class="ml-10 flex items-baseline space-x-8">
                         <a href="index.html" class="nav-link active text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</a>
                         <a href="analytics.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Analytics</a>
+                        <a href="budget.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Budget</a>
                         <a href="settings.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Settings</a>
                         <a href="export.html" class="nav-link text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Export</a>
                     </div>
@@ -192,6 +199,7 @@
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
                 <a href="index.html" class="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 rounded-md">Dashboard</a>
                 <a href="analytics.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Analytics</a>
+                <a href="budget.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Budget</a>
                 <a href="settings.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Settings</a>
                 <a href="export.html" class="block px-3 py-2 text-base font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-md">Export</a>
             </div>
@@ -283,8 +291,8 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Tax Savings</p>
-                        <p id="totalTax" class="text-2xl font-bold text-gray-900">$0.00</p>
+                        <p class="text-sm font-medium text-gray-600">Net Income</p>
+                        <p id="netIncome" class="text-2xl font-bold text-gray-900">$0.00</p>
                     </div>
                 </div>
             </div>
@@ -392,6 +400,35 @@
                             Add Expense
                         </button>
                     </form>
+                    
+                    <!-- Income Entry Form -->
+                    <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <h3 class="text-lg font-semibold text-green-800 mb-4">Quick Income Entry</h3>
+                        <form id="incomeForm" class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="date" id="incomeDate" name="date" class="form-input px-3 py-2 border border-green-300 rounded-lg" required>
+                                <input type="number" id="incomeAmount" name="amount" step="0.01" placeholder="Amount" class="form-input px-3 py-2 border border-green-300 rounded-lg" required>
+                            </div>
+                            <input type="text" id="incomeSource" name="source" placeholder="Income source" class="form-input w-full px-3 py-2 border border-green-300 rounded-lg" required>
+                            <input type="text" id="incomeDescription" name="description" placeholder="Description" class="form-input w-full px-3 py-2 border border-green-300 rounded-lg">
+                            <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700">
+                                Add Income
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="expenseTracker.showRecurringExpenses()" class="bg-blue-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-blue-700">
+                                Recurring
+                            </button>
+                            <button onclick="expenseTracker.showRecentVendors()" class="bg-purple-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-purple-700">
+                                Recent Vendors
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -425,30 +462,56 @@
             </div>
         </div>
         
+        <!-- Financial Summary Section -->
+        <div class="mt-12 animate-on-load">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-8 text-center">Financial Summary</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">Total Income</h3>
+                        <p id="totalIncomeDisplay" class="text-2xl font-bold text-blue-600">$0.00</p>
+                    </div>
+                    <div class="text-center p-4 bg-red-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-red-900 mb-2">Total Expenses</h3>
+                        <p id="totalExpensesDisplay" class="text-2xl font-bold text-red-600">$0.00</p>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-green-900 mb-2">Net Worth</h3>
+                        <p id="netWorthDisplay" class="text-2xl font-bold text-green-600">$0.00</p>
+                    </div>
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-purple-900 mb-2">Tax Savings</h3>
+                        <p id="taxSavingsDisplay" class="text-2xl font-bold text-purple-600">$0.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Stats Section -->
         <div class="mt-12 animate-on-load">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-8 text-center">Why Choose ExpenseTracker Pro?</h2>
+                <h2 class="text-2xl font-semibold text-gray-900 mb-8 text-center">Complete Pocket Accountant</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="text-center">
                         <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Smart Analytics</h3>
-                        <p class="text-gray-600">Advanced charts and insights to optimize your tax deductions and spending patterns.</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Income & Expense Tracking</h3>
+                        <p class="text-gray-600">Complete financial tracking with income, expenses, and real-time net worth calculations.</p>
                     </div>
                     
                     <div class="text-center">
                         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure & Private</h3>
-                        <p class="text-gray-600">Your financial data stays on your device with local storage and no cloud dependencies.</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Financial Analytics</h3>
+                        <p class="text-gray-600">Professional charts, budgeting tools, and financial insights for complete money management.</p>
                     </div>
                     
                     <div class="text-center">
@@ -457,8 +520,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Tax Ready</h3>
-                        <p class="text-gray-600">Generate comprehensive reports formatted for tax professionals and IRS compliance.</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Complete Accounting</h3>
+                        <p class="text-gray-600">Full accounting features with balance sheets, profit/loss statements, and tax optimization.</p>
                     </div>
                 </div>
             </div>
@@ -476,6 +539,7 @@
                 <div class="flex justify-center space-x-6 mb-8">
                     <a href="index.html" class="text-gray-400 hover:text-white transition-colors">Dashboard</a>
                     <a href="analytics.html" class="text-gray-400 hover:text-white transition-colors">Analytics</a>
+                    <a href="budget.html" class="text-gray-400 hover:text-white transition-colors">Budget</a>
                     <a href="settings.html" class="text-gray-400 hover:text-white transition-colors">Settings</a>
                     <a href="export.html" class="text-gray-400 hover:text-white transition-colors">Export</a>
                 </div>

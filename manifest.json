@@ -1,0 +1,162 @@
+{
+  "name": "Paksa Daily Expense Tracker",
+  "short_name": "Paksa Expense",
+  "description": "Professional expense tracking and tax optimization application by Paksa IT Solutions",
+  "version": "2.0.0",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#3b82f6",
+  "background_color": "#f9fafb",
+  "lang": "en-US",
+  "scope": "/",
+  "categories": ["finance", "business", "productivity"],
+  "icons": [
+    {
+      "src": "resources/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "resources/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "resources/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "resources/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "resources/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "resources/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "resources/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "resources/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "resources/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop Dashboard View"
+    },
+    {
+      "src": "resources/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile Expense Entry"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Expense",
+      "short_name": "Add Expense",
+      "description": "Quickly add a new expense",
+      "url": "/?action=add-expense",
+      "icons": [
+        {
+          "src": "resources/shortcut-add.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "View Analytics",
+      "short_name": "Analytics",
+      "description": "View expense analytics and reports",
+      "url": "/analytics.html",
+      "icons": [
+        {
+          "src": "resources/shortcut-analytics.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Export Data",
+      "short_name": "Export",
+      "description": "Export expense data and reports",
+      "url": "/export.html",
+      "icons": [
+        {
+          "src": "resources/shortcut-export.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "web+paksa",
+      "url": "/?protocol=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/import",
+      "accept": {
+        "application/json": [".json"],
+        "text/csv": [".csv"],
+        "application/xml": [".xml"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "receipt",
+          "accept": ["image/*", "application/pdf"]
+        }
+      ]
+    }
+  }
+}

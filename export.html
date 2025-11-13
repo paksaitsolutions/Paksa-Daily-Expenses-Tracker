@@ -6,6 +6,16 @@
     <title>Export & Reports - Paksa Daily Expense</title>
     <meta name="description" content="Export your expense data in multiple formats for tax preparation, accounting, and backup purposes. Generate comprehensive financial reports.">
     
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Paksa Expense">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="resources/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="resources/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="resources/favicon-16x16.png">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -553,6 +563,7 @@
     <script>
         let selectedFormat = 'csv';
         let selectedCategories = ['all'];
+        let exportInProgress = false;
         
         function selectFormat(format) {
             selectedFormat = format;
@@ -561,46 +572,168 @@
             document.querySelectorAll('.format-button').forEach(btn => {
                 btn.classList.remove('selected');
             });
-            event.target.closest('.format-button').classList.add('selected');
+            
+            const clickedButton = event ? event.target.closest('.format-button') : document.querySelector(`[onclick*="${format}"]`);
+            if (clickedButton) {
+                clickedButton.classList.add('selected');
+            }
             
             updatePreview();
+            updateExportButtonText();
+        }
+        
+        function updateExportButtonText() {
+            const exportButton = document.querySelector('button[onclick="generateExport()"]');
+            if (exportButton) {
+                const formatNames = {
+                    'csv': 'CSV Spreadsheet',
+                    'pdf': 'PDF Report',
+                    'json': 'JSON Data',
+                    'xml': 'XML Format'
+                };
+                exportButton.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Generate ${formatNames[selectedFormat] || 'Export'}
+                `;
+            }
         }
         
         function updatePreview() {
             const previewContent = document.getElementById('previewContent');
             const format = selectedFormat;
             
-            if (window.expenseTracker) {
-                const expenses = window.expenseTracker.expenses.slice(0, 5); // Show first 5 records
+            if (window.expenseTracker && window.expenseTracker.expenses) {
+                // Filter expenses based on current settings
+                let expenses = window.expenseTracker.expenses;
                 
+                // Apply date filter
+                const startDate = document.getElementById('startDate')?.value;
+                const endDate = document.getElementById('endDate')?.value;
+                
+                if (startDate && endDate) {
+                    expenses = expenses.filter(expense => 
+                        expense.date >= startDate && expense.date <= endDate
+                    );
+                }
+                
+                // Apply category filter
+                if (selectedCategories.length > 0 && !selectedCategories.includes('all')) {
+                    expenses = expenses.filter(expense => 
+                        selectedCategories.includes(expense.category)
+                    );
+                }
+                
+                // Apply tax deductible filter
+                if (document.getElementById('includeTaxDeductible')?.checked) {
+                    expenses = expenses.filter(expense => expense.taxDeductible);
+                }
+                
+                // Show first 5 records for preview
+                const previewExpenses = expenses.slice(0, 5);
                 let preview = '';
                 
                 if (format === 'csv') {
-                    preview = 'Date,Amount,Category,Description,Tax Deductible,Tax Amount\n';
-                    expenses.forEach(expense => {
-                        preview += `${expense.date},$${expense.amount},${expense.category},"${expense.description || ''}",${expense.taxDeductible},$${expense.taxAmount || 0}\n`;
+                    preview = 'Date,Amount,Category,Description,Vendor,Tax Deductible,Tax Amount\n';
+                    previewExpenses.forEach(expense => {
+                        preview += `${expense.date},$${expense.amount},"${expense.category}","${expense.description || ''}","${expense.vendor || ''}",${expense.taxDeductible ? 'Yes' : 'No'},$${expense.taxAmount || 0}\n`;
                     });
+                    
+                    if (expenses.length > 5) {
+                        preview += `\n... and ${expenses.length - 5} more records`;
+                    }
                 } else if (format === 'json') {
-                    preview = JSON.stringify(expenses, null, 2);
+                    const previewData = {
+                        summary: {
+                            totalRecords: expenses.length,
+                            totalAmount: expenses.reduce((sum, exp) => sum + exp.amount, 0),
+                            exportDate: new Date().toISOString()
+                        },
+                        expenses: previewExpenses
+                    };
+                    preview = JSON.stringify(previewData, null, 2);
+                    
+                    if (expenses.length > 5) {
+                        preview += `\n\n// ... and ${expenses.length - 5} more expense records`;
+                    }
                 } else if (format === 'xml') {
-                    preview = '<?xml version="1.0" encoding="UTF-8"?>\n<expenses>\n';
-                    expenses.forEach(expense => {
-                        preview += `  <expense>\n`;
+                    preview = '<?xml version="1.0" encoding="UTF-8"?>\n<expense-report>\n';
+                    preview += `  <summary>\n    <total-records>${expenses.length}</total-records>\n    <export-date>${new Date().toISOString()}</export-date>\n  </summary>\n`;
+                    preview += '  <expenses>\n';
+                    
+                    previewExpenses.forEach(expense => {
+                        preview += '    <expense>\n';
                         Object.entries(expense).forEach(([key, value]) => {
-                            preview += `    <${key}>${value}</${key}>\n`;
+                            preview += `      <${key}><![CDATA[${value}]]></${key}>\n`;
                         });
-                        preview += `  </expense>\n`;
+                        preview += '    </expense>\n';
                     });
-                    preview += '</expenses>';
+                    
+                    if (expenses.length > 5) {
+                        preview += `    <!-- ... and ${expenses.length - 5} more expense records -->\n`;
+                    }
+                    
+                    preview += '  </expenses>\n</expense-report>';
+                } else if (format === 'pdf') {
+                    preview = `PDF Report Preview:\n\n`;
+                    preview += `Paksa Daily Expense - Tax Report\n`;
+                    preview += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+                    preview += `Summary:\n`;
+                    preview += `- Total Records: ${expenses.length}\n`;
+                    preview += `- Total Amount: $${expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}\n`;
+                    preview += `- Tax Deductible: $${expenses.filter(exp => exp.taxDeductible).reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}\n\n`;
+                    preview += `Sample Records:\n`;
+                    
+                    previewExpenses.forEach((expense, index) => {
+                        preview += `${index + 1}. ${expense.date} - $${expense.amount} - ${expense.category}\n`;
+                        preview += `   ${expense.description || 'No description'}\n`;
+                        if (expense.taxDeductible) preview += `   ✓ Tax Deductible\n`;
+                        preview += `\n`;
+                    });
+                    
+                    if (expenses.length > 5) {
+                        preview += `... and ${expenses.length - 5} more records will be included in the full report.`;
+                    }
                 }
                 
-                previewContent.textContent = preview;
+                if (previewContent) {
+                    previewContent.textContent = preview;
+                }
+                
+                // Update record count in preview header
+                const previewHeader = document.querySelector('#reportPreview h3');
+                if (previewHeader) {
+                    previewHeader.textContent = `Report Preview (${expenses.length} records)`;
+                }
+            } else {
+                if (previewContent) {
+                    previewContent.textContent = 'No data available for preview. Please ensure expenses are loaded.';
+                }
             }
         }
         
         function generateExport() {
+            if (exportInProgress) {
+                return;
+            }
+            
+            exportInProgress = true;
             const exportProgress = document.getElementById('exportProgress');
             const reportPreview = document.getElementById('reportPreview');
+            const exportButton = document.querySelector('button[onclick="generateExport()"]');
+            
+            // Update button state
+            if (exportButton) {
+                exportButton.disabled = true;
+                exportButton.innerHTML = `
+                    <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                `;
+            }
             
             // Hide preview and show progress
             reportPreview.classList.add('hidden');
@@ -612,27 +745,46 @@
                     start: document.getElementById('startDate').value,
                     end: document.getElementById('endDate').value
                 },
-                categories: selectedCategories,
+                categories: selectedCategories.filter(cat => cat !== 'all'),
                 includeTaxDeductible: document.getElementById('includeTaxDeductible').checked,
                 includeReceipts: document.getElementById('includeReceipts').checked,
                 includeSummary: document.getElementById('includeSummary').checked,
                 taxReport: selectedFormat === 'pdf'
             };
             
-            // Simulate export progress
+            // Validate export options
+            if (!validateExportOptions(exportOptions)) {
+                resetExportState();
+                return;
+            }
+            
+            // Simulate realistic export progress
             let progress = 0;
+            const progressSteps = [
+                { progress: 10, message: 'Initializing export...' },
+                { progress: 25, message: 'Collecting expense data...' },
+                { progress: 45, message: 'Processing categories...' },
+                { progress: 65, message: 'Calculating tax information...' },
+                { progress: 80, message: 'Formatting data...' },
+                { progress: 95, message: 'Finalizing report...' },
+                { progress: 100, message: 'Export completed!' }
+            ];
+            
+            let stepIndex = 0;
             const interval = setInterval(() => {
-                progress += Math.random() * 20;
-                if (progress > 100) progress = 100;
-                
-                document.getElementById('progressBar').style.width = progress + '%';
-                document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
-                
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    document.getElementById('progressStatus').textContent = 'Export completed!';
+                if (stepIndex < progressSteps.length) {
+                    const step = progressSteps[stepIndex];
+                    progress = step.progress;
                     
-                    // Use the proper export function from main.js
+                    document.getElementById('progressBar').style.width = progress + '%';
+                    document.getElementById('progressPercent').textContent = progress + '%';
+                    document.getElementById('progressStatus').textContent = step.message;
+                    
+                    stepIndex++;
+                } else {
+                    clearInterval(interval);
+                    
+                    // Execute actual export
                     if (window.expenseTracker) {
                         try {
                             window.expenseTracker.handleExport(selectedFormat, exportOptions);
@@ -641,22 +793,67 @@
                                 exportProgress.classList.add('hidden');
                                 reportPreview.classList.remove('hidden');
                                 updatePreview();
+                                resetExportState();
+                                
+                                // Show success message
+                                if (window.expenseTracker.showSuccessMessage) {
+                                    window.expenseTracker.showSuccessMessage(`${selectedFormat.toUpperCase()} export completed successfully!`);
+                                }
                             }, 1000);
                         } catch (error) {
                             document.getElementById('progressStatus').textContent = 'Export failed. Please try again.';
                             console.error('Export error:', error);
+                            
+                            setTimeout(() => {
+                                resetExportState();
+                                if (window.expenseTracker && window.expenseTracker.showErrorMessage) {
+                                    window.expenseTracker.showErrorMessage('Export failed: ' + error.message);
+                                }
+                            }, 2000);
                         }
+                    } else {
+                        document.getElementById('progressStatus').textContent = 'Export system not available.';
+                        setTimeout(resetExportState, 2000);
                     }
-                } else if (progress > 80) {
-                    document.getElementById('progressStatus').textContent = 'Finalizing report...';
-                } else if (progress > 60) {
-                    document.getElementById('progressStatus').textContent = 'Formatting data...';
-                } else if (progress > 40) {
-                    document.getElementById('progressStatus').textContent = 'Processing expenses...';
-                } else if (progress > 20) {
-                    document.getElementById('progressStatus').textContent = 'Collecting data...';
                 }
-            }, 200);
+            }, 400);
+        }
+        
+        function validateExportOptions(options) {
+            // Validate date range
+            if (options.dateRange.start && options.dateRange.end) {
+                const startDate = new Date(options.dateRange.start);
+                const endDate = new Date(options.dateRange.end);
+                
+                if (startDate > endDate) {
+                    if (window.expenseTracker && window.expenseTracker.showErrorMessage) {
+                        window.expenseTracker.showErrorMessage('Start date cannot be after end date.');
+                    } else {
+                        alert('Start date cannot be after end date.');
+                    }
+                    return false;
+                }
+                
+                // Check if date range is too large (more than 5 years)
+                const yearsDiff = (endDate - startDate) / (1000 * 60 * 60 * 24 * 365);
+                if (yearsDiff > 5) {
+                    if (window.expenseTracker && window.expenseTracker.showWarningMessage) {
+                        window.expenseTracker.showWarningMessage('Large date range detected. Export may take longer.');
+                    }
+                }
+            }
+            
+            return true;
+        }
+        
+        function resetExportState() {
+            exportInProgress = false;
+            const exportButton = document.querySelector('button[onclick="generateExport()"]');
+            
+            if (exportButton) {
+                exportButton.disabled = false;
+                updateExportButtonText();
+            }
         }
         
         function downloadExport() {
@@ -766,41 +963,324 @@
         }
         
         function resetExportOptions() {
-            // Reset form to default values
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            document.getElementById('includeTaxDeductible').checked = true;
-            document.getElementById('includeReceipts').checked = false;
-            document.getElementById('includeSummary').checked = true;
-            
-            // Reset category filters
-            document.querySelectorAll('.filter-chip').forEach(chip => {
-                chip.classList.remove('active');
-            });
-            document.querySelector('[data-category="all"]').classList.add('active');
-            selectedCategories = ['all'];
-            
-            // Reset format selection
-            document.querySelectorAll('.format-button').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            document.querySelector('[onclick="selectFormat(\'csv\')"]').classList.add('selected');
-            selectedFormat = 'csv';
-            
-            // Hide preview and progress
-            document.getElementById('reportPreview').classList.add('hidden');
-            document.getElementById('exportProgress').classList.add('hidden');
-            
-            // Reset dates to current year
-            const today = new Date();
-            const firstDay = new Date(today.getFullYear(), 0, 1);
-            document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
-            document.getElementById('endDate').value = today.toISOString().split('T')[0];
-            
-            alert('Export options have been reset to defaults!');
+            try {
+                // Reset form to default values
+                const startDateEl = document.getElementById('startDate');
+                const endDateEl = document.getElementById('endDate');
+                const includeTaxDeductible = document.getElementById('includeTaxDeductible');
+                const includeReceipts = document.getElementById('includeReceipts');
+                const includeSummary = document.getElementById('includeSummary');
+                
+                // Reset dates to current year
+                const today = new Date();
+                const firstDay = new Date(today.getFullYear(), 0, 1);
+                
+                if (startDateEl) startDateEl.value = firstDay.toISOString().split('T')[0];
+                if (endDateEl) endDateEl.value = today.toISOString().split('T')[0];
+                if (includeTaxDeductible) includeTaxDeductible.checked = true;
+                if (includeReceipts) includeReceipts.checked = false;
+                if (includeSummary) includeSummary.checked = true;
+                
+                // Reset category filters
+                document.querySelectorAll('.filter-chip').forEach(chip => {
+                    chip.classList.remove('active');
+                });
+                const allCategoriesChip = document.querySelector('[data-category="all"]');
+                if (allCategoriesChip) allCategoriesChip.classList.add('active');
+                selectedCategories = ['all'];
+                
+                // Reset format selection
+                selectFormat('csv');
+                
+                // Hide preview and progress
+                const reportPreview = document.getElementById('reportPreview');
+                const exportProgress = document.getElementById('exportProgress');
+                
+                if (reportPreview) reportPreview.classList.add('hidden');
+                if (exportProgress) exportProgress.classList.add('hidden');
+                
+                // Update summary and preview
+                updateExportSummary();
+                updatePreview();
+                
+                // Show success message
+                if (window.expenseTracker && window.expenseTracker.showSuccessMessage) {
+                    window.expenseTracker.showSuccessMessage('Export options have been reset to defaults!');
+                } else {
+                    alert('Export options have been reset to defaults!');
+                }
+            } catch (error) {
+                console.error('Error resetting export options:', error);
+                if (window.expenseTracker && window.expenseTracker.showErrorMessage) {
+                    window.expenseTracker.showErrorMessage('Failed to reset export options');
+                } else {
+                    alert('Failed to reset export options');
+                }
+            }
         }
         
-        // Update summary when data changes
-        setTimeout(updateExportSummary, 1000);
+        // Enhanced initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize format selection
+            selectFormat('csv');
+            
+            // Update summary when data changes
+            setTimeout(() => {
+                updateExportSummary();
+                initializeAdvancedFeatures();
+            }, 1000);
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case 'e':
+                            e.preventDefault();
+                            generateExport();
+                            break;
+                        case 'r':
+                            e.preventDefault();
+                            resetExportOptions();
+                            break;
+                        case '1':
+                            e.preventDefault();
+                            selectFormat('csv');
+                            break;
+                        case '2':
+                            e.preventDefault();
+                            selectFormat('pdf');
+                            break;
+                        case '3':
+                            e.preventDefault();
+                            selectFormat('json');
+                            break;
+                        case '4':
+                            e.preventDefault();
+                            selectFormat('xml');
+                            break;
+                    }
+                }
+            });
+        });
+        
+        function initializeAdvancedFeatures() {
+            // Add export history
+            loadExportHistory();
+            
+            // Add smart date suggestions
+            addDateSuggestions();
+            
+            // Add export templates
+            initializeExportTemplates();
+        }
+        
+        function loadExportHistory() {
+            try {
+                const exportLog = JSON.parse(localStorage.getItem('paksa_export_log') || '[]');
+                const recentExports = exportLog.slice(-5).reverse();
+                
+                const historyContainer = document.getElementById('recentExports');
+                if (historyContainer && recentExports.length > 0) {
+                    historyContainer.innerHTML = recentExports.map(export => {
+                        const date = new Date(export.timestamp).toLocaleDateString();
+                        const time = new Date(export.timestamp).toLocaleTimeString();
+                        
+                        return `
+                            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <span class="text-blue-600 font-semibold text-sm">${export.format.toUpperCase()}</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900">${export.format.toUpperCase()} Export</p>
+                                        <p class="text-sm text-gray-500">${export.recordCount} records • ${date} ${time}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm text-green-600 font-medium">Completed</span>
+                                    <button onclick="repeatExport('${export.format}')" class="text-blue-600 hover:text-blue-800" title="Repeat this export">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load export history:', error);
+            }
+        }
+        
+        function repeatExport(format) {
+            selectFormat(format);
+            generateExport();
+        }
+        
+        function addDateSuggestions() {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            if (startDateInput && endDateInput) {
+                // Add quick date range buttons
+                const dateContainer = startDateInput.parentElement.parentElement;
+                const suggestionsDiv = document.createElement('div');
+                suggestionsDiv.className = 'mt-2 flex flex-wrap gap-2';
+                suggestionsDiv.innerHTML = `
+                    <button type="button" onclick="setDateRange('thisMonth')" class="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200">
+                        This Month
+                    </button>
+                    <button type="button" onclick="setDateRange('lastMonth')" class="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200">
+                        Last Month
+                    </button>
+                    <button type="button" onclick="setDateRange('thisQuarter')" class="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200">
+                        This Quarter
+                    </button>
+                    <button type="button" onclick="setDateRange('thisYear')" class="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200">
+                        This Year
+                    </button>
+                    <button type="button" onclick="setDateRange('lastYear')" class="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200">
+                        Last Year
+                    </button>
+                `;
+                
+                dateContainer.appendChild(suggestionsDiv);
+            }
+        }
+        
+        function setDateRange(period) {
+            const today = new Date();
+            let startDate, endDate;
+            
+            switch(period) {
+                case 'thisMonth':
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'lastMonth':
+                    startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+                case 'thisQuarter':
+                    const quarter = Math.floor(today.getMonth() / 3);
+                    startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                    endDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
+                    break;
+                case 'thisYear':
+                    startDate = new Date(today.getFullYear(), 0, 1);
+                    endDate = new Date(today.getFullYear(), 11, 31);
+                    break;
+                case 'lastYear':
+                    startDate = new Date(today.getFullYear() - 1, 0, 1);
+                    endDate = new Date(today.getFullYear() - 1, 11, 31);
+                    break;
+            }
+            
+            if (startDate && endDate) {
+                document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+                document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+                
+                // Update summary with new date range
+                updateExportSummary();
+            }
+        }
+        
+        function initializeExportTemplates() {
+            // Add custom export templates functionality
+            const templatesContainer = document.querySelector('.quick-export-templates');
+            if (templatesContainer) {
+                // Add save template button
+                const saveTemplateBtn = document.createElement('button');
+                saveTemplateBtn.className = 'mt-4 px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700';
+                saveTemplateBtn.textContent = 'Save Current Settings as Template';
+                saveTemplateBtn.onclick = saveExportTemplate;
+                
+                templatesContainer.appendChild(saveTemplateBtn);
+            }
+        }
+        
+        function saveExportTemplate() {
+            const templateName = prompt('Enter a name for this export template:');
+            if (!templateName) return;
+            
+            const template = {
+                name: templateName,
+                format: selectedFormat,
+                categories: selectedCategories,
+                dateRange: {
+                    start: document.getElementById('startDate').value,
+                    end: document.getElementById('endDate').value
+                },
+                options: {
+                    includeTaxDeductible: document.getElementById('includeTaxDeductible').checked,
+                    includeReceipts: document.getElementById('includeReceipts').checked,
+                    includeSummary: document.getElementById('includeSummary').checked
+                },
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                const templates = JSON.parse(localStorage.getItem('paksa_export_templates') || '[]');
+                templates.push(template);
+                localStorage.setItem('paksa_export_templates', JSON.stringify(templates));
+                
+                if (window.expenseTracker && window.expenseTracker.showSuccessMessage) {
+                    window.expenseTracker.showSuccessMessage(`Template "${templateName}" saved successfully!`);
+                } else {
+                    alert(`Template "${templateName}" saved successfully!`);
+                }
+            } catch (error) {
+                console.error('Failed to save template:', error);
+                if (window.expenseTracker && window.expenseTracker.showErrorMessage) {
+                    window.expenseTracker.showErrorMessage('Failed to save template.');
+                }
+            }
+        }
+        
+        // Add export analytics
+        function trackExportUsage() {
+            try {
+                const usage = JSON.parse(localStorage.getItem('paksa_export_usage') || '{}');
+                usage[selectedFormat] = (usage[selectedFormat] || 0) + 1;
+                usage.totalExports = (usage.totalExports || 0) + 1;
+                usage.lastExport = new Date().toISOString();
+                
+                localStorage.setItem('paksa_export_usage', JSON.stringify(usage));
+            } catch (error) {
+                console.error('Failed to track export usage:', error);
+            }
+        }
+        
+        // Enhanced error handling
+        window.addEventListener('error', function(e) {
+            console.error('Export page error:', e.error);
+            if (exportInProgress) {
+                resetExportState();
+                if (window.expenseTracker && window.expenseTracker.showErrorMessage) {
+                    window.expenseTracker.showErrorMessage('An error occurred during export. Please try again.');
+                }
+            }
+        });
+        
+        // Add tooltips for better UX
+        function addTooltips() {
+            const tooltips = {
+                'csv': 'Perfect for Excel, Google Sheets, and data analysis',
+                'pdf': 'Professional reports ready for printing and sharing',
+                'json': 'Raw data format for developers and data backup',
+                'xml': 'Structured format compatible with accounting software'
+            };
+            
+            document.querySelectorAll('.format-button').forEach(button => {
+                const format = button.onclick?.toString().match(/selectFormat\('(.+?)'\)/)?.[1];
+                if (format && tooltips[format]) {
+                    button.title = tooltips[format];
+                }
+            });
+        }
+        
+        // Initialize tooltips after DOM load
+        setTimeout(addTooltips, 500);
     </script>
 </body>

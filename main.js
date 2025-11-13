@@ -309,8 +309,11 @@ class PaksaExpenseTracker {
             this.loadPageContent();
             this.updateTotals();
             this.initializeAnimations();
+            this.setupPerformanceOptimizations();
+            this.initializeAdvancedFeatures();
         } catch (error) {
             console.error('Error initializing app:', error);
+            this.showErrorMessage('Application failed to initialize. Please refresh the page.');
         }
     }
 
@@ -740,12 +743,53 @@ class PaksaExpenseTracker {
     }
 
     filterExpenses(searchTerm) {
-        const filtered = this.expenses.filter(expense => 
-            expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            expense.amount.toString().includes(searchTerm)
-        );
+        if (!searchTerm.trim()) {
+            this.renderExpenseList();
+            return;
+        }
+        
+        const filtered = this.expenses.filter(expense => {
+            const searchLower = searchTerm.toLowerCase();
+            return (
+                (expense.description && expense.description.toLowerCase().includes(searchLower)) ||
+                (expense.category && expense.category.toLowerCase().includes(searchLower)) ||
+                (expense.vendor && expense.vendor.toLowerCase().includes(searchLower)) ||
+                (expense.project && expense.project.toLowerCase().includes(searchLower)) ||
+                expense.amount.toString().includes(searchTerm) ||
+                (expense.tags && expense.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+            );
+        });
+        
         this.renderExpenseList(filtered);
+        
+        // Show search results count
+        this.showSearchResults(filtered.length, this.expenses.length);
+    }
+    
+    showSearchResults(filteredCount, totalCount) {
+        const existingMessage = document.getElementById('searchResults');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        if (filteredCount < totalCount) {
+            const message = document.createElement('div');
+            message.id = 'searchResults';
+            message.className = 'bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-blue-800';
+            message.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>Showing ${filteredCount} of ${totalCount} expenses</span>
+                    <button onclick="this.parentElement.parentElement.remove(); expenseTracker.renderExpenseList();" class="text-blue-600 hover:text-blue-800">
+                        Clear filter
+                    </button>
+                </div>
+            `;
+            
+            const expenseList = document.getElementById('expenseList');
+            if (expenseList) {
+                expenseList.parentNode.insertBefore(message, expenseList);
+            }
+        }
     }
 
     toggleCategoryFilter(element) {
@@ -881,24 +925,108 @@ class PaksaExpenseTracker {
 
     showSuccessMessage(message) {
         this.showMessage(message, 'success');
+        this.playNotificationSound('success');
     }
 
     showErrorMessage(message) {
         this.showMessage(message, 'error');
+        this.playNotificationSound('error');
+    }
+    
+    showInfoMessage(message) {
+        this.showMessage(message, 'info');
+    }
+    
+    showWarningMessage(message) {
+        this.showMessage(message, 'warning');
     }
 
     showMessage(message, type) {
+        // Remove existing messages of the same type
+        document.querySelectorAll(`.toast-${type}`).forEach(msg => msg.remove());
+        
         const messageDiv = document.createElement('div');
-        messageDiv.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`;
-        messageDiv.textContent = message;
+        messageDiv.className = `toast-${type} fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 max-w-md`;
+        
+        const colors = {
+            success: 'bg-green-500 text-white',
+            error: 'bg-red-500 text-white',
+            info: 'bg-blue-500 text-white',
+            warning: 'bg-yellow-500 text-black'
+        };
+        
+        const icons = {
+            success: '✓',
+            error: '✕',
+            info: 'ℹ',
+            warning: '⚠'
+        };
+        
+        messageDiv.className += ` ${colors[type]}`;
+        messageDiv.innerHTML = `
+            <span class="text-lg font-bold">${icons[type]}</span>
+            <span class="flex-1">${message}</span>
+            <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
+                ✕
+            </button>
+        `;
         
         document.body.appendChild(messageDiv);
         
+        // Animate in
+        if (typeof anime !== 'undefined') {
+            anime({
+                targets: messageDiv,
+                translateX: [300, 0],
+                opacity: [0, 1],
+                duration: 300,
+                easing: 'easeOutQuart'
+            });
+        }
+        
+        // Auto remove after 5 seconds
         setTimeout(() => {
-            messageDiv.remove();
-        }, 3000);
+            if (messageDiv.parentNode) {
+                if (typeof anime !== 'undefined') {
+                    anime({
+                        targets: messageDiv,
+                        translateX: [0, 300],
+                        opacity: [1, 0],
+                        duration: 300,
+                        easing: 'easeInQuart',
+                        complete: () => messageDiv.remove()
+                    });
+                } else {
+                    messageDiv.remove();
+                }
+            }
+        }, 5000);
+    }
+    
+    playNotificationSound(type) {
+        if (!this.settings.app.soundNotifications) return;
+        
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            const frequency = type === 'success' ? 800 : 400;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        } catch (error) {
+            // Fallback for browsers that don't support Web Audio API
+            console.log('Sound notification not supported');
+        }
     }
 
     initializeAnimations() {
@@ -979,7 +1107,203 @@ class PaksaExpenseTracker {
         }
     }
 
-    // Export functionality
+    // Performance optimizations
+    setupPerformanceOptimizations() {
+        // Debounce search input
+        this.debounceSearch = this.debounce((searchTerm) => {
+            this.filterExpenses(searchTerm);
+        }, 300);
+        
+        // Lazy load charts
+        this.lazyLoadCharts();
+        
+        // Optimize animations
+        this.optimizeAnimations();
+    }
+    
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    lazyLoadCharts() {
+        if ('IntersectionObserver' in window) {
+            const chartObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        this.loadChartForElement(entry.target);
+                        chartObserver.unobserve(entry.target);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('[id$="Chart"]').forEach(chart => {
+                chartObserver.observe(chart);
+            });
+        }
+    }
+    
+    loadChartForElement(element) {
+        const chartId = element.id;
+        switch(chartId) {
+            case 'expenseChart':
+                this.renderExpenseChart();
+                break;
+            case 'categoryChart':
+                this.renderCategoryChart();
+                break;
+            case 'taxChart':
+                this.renderTaxChart();
+                break;
+        }
+    }
+    
+    optimizeAnimations() {
+        // Reduce animations on low-end devices
+        if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+            document.documentElement.style.setProperty('--animation-duration', '0.1s');
+        }
+    }
+    
+    // Advanced features initialization
+    initializeAdvancedFeatures() {
+        this.setupAutoSave();
+        this.initializeNotifications();
+        this.setupDataBackup();
+        this.initializeKeyboardShortcuts();
+        this.setupOfflineSupport();
+    }
+    
+    setupAutoSave() {
+        if (this.settings.app.autoSave) {
+            setInterval(() => {
+                this.autoSaveData();
+            }, 30000); // Auto-save every 30 seconds
+        }
+    }
+    
+    autoSaveData() {
+        try {
+            this.saveToStorage();
+            this.saveIncomeToStorage();
+            localStorage.setItem('paksa_settings', JSON.stringify(this.settings));
+            localStorage.setItem('paksa_accounts', JSON.stringify(this.accounts));
+            localStorage.setItem('paksa_budgets', JSON.stringify(this.budgets));
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+        }
+    }
+    
+    initializeNotifications() {
+        if ('Notification' in window && this.settings.app.soundNotifications) {
+            Notification.requestPermission();
+        }
+    }
+    
+    setupDataBackup() {
+        // Create automatic backup every week
+        const lastBackup = localStorage.getItem('paksa_last_backup');
+        const oneWeek = 7 * 24 * 60 * 60 * 1000;
+        
+        if (!lastBackup || (Date.now() - parseInt(lastBackup)) > oneWeek) {
+            this.createAutomaticBackup();
+        }
+    }
+    
+    createAutomaticBackup() {
+        try {
+            const backupData = {
+                expenses: this.expenses,
+                income: this.income,
+                settings: this.settings,
+                accounts: this.accounts,
+                budgets: this.budgets,
+                categories: this.categories,
+                backupDate: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            localStorage.setItem('paksa_backup', JSON.stringify(backupData));
+            localStorage.setItem('paksa_last_backup', Date.now().toString());
+        } catch (error) {
+            console.error('Backup creation failed:', error);
+        }
+    }
+    
+    initializeKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + N: New expense
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                document.getElementById('amount')?.focus();
+            }
+            
+            // Ctrl/Cmd + S: Save settings
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (this.currentPage === 'settings.html') {
+                    this.saveSettings();
+                }
+            }
+            
+            // Ctrl/Cmd + E: Export
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                e.preventDefault();
+                if (this.currentPage === 'export.html') {
+                    this.handleExport('csv');
+                }
+            }
+            
+            // Escape: Close modals
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        });
+    }
+    
+    setupOfflineSupport() {
+        window.addEventListener('online', () => {
+            this.isOnline = true;
+            this.syncOfflineData();
+            this.showSuccessMessage('Connection restored. Data synced.');
+        });
+        
+        window.addEventListener('offline', () => {
+            this.isOnline = false;
+            this.showErrorMessage('You are offline. Data will be saved locally.');
+        });
+    }
+    
+    syncOfflineData() {
+        // Sync any offline data when connection is restored
+        const offlineData = localStorage.getItem('paksa_offline_queue');
+        if (offlineData) {
+            try {
+                const queue = JSON.parse(offlineData);
+                queue.forEach(item => {
+                    if (item.type === 'expense') {
+                        this.addExpense(item.data);
+                    } else if (item.type === 'income') {
+                        this.addIncome(item.data);
+                    }
+                });
+                localStorage.removeItem('paksa_offline_queue');
+            } catch (error) {
+                console.error('Offline sync failed:', error);
+            }
+        }
+    }
+    
+    // Enhanced export functionality
     handleExport(format, options = {}) {
         const exportOptions = {
             dateRange: options.dateRange || { start: null, end: null },
@@ -1027,34 +1351,52 @@ class PaksaExpenseTracker {
     }
 
     exportToCSV(expenses, options) {
-        const headers = [
-            'Date', 
-            'Amount', 
-            'Category', 
-            'Description', 
-            'Tax Deductible', 
-            'Tax Amount', 
-            'Payment Method',
-            'Created At'
-        ];
-        
-        const csvContent = [
-            headers.join(','),
-            ...expenses.map(expense => [
-                expense.date,
-                expense.amount,
-                expense.category,
-                `"${expense.description || ''}"`,
-                expense.taxDeductible ? 'Yes' : 'No',
-                expense.taxAmount || 0,
-                expense.paymentMethod,
-                expense.createdAt
-            ].join(','))
-        ].join('\n');
+        try {
+            const headers = [
+                'Date', 'Amount', 'Category', 'Description', 'Tax Deductible', 
+                'Tax Amount', 'Payment Method', 'Account', 'Vendor', 'Project', 
+                'Tags', 'Created At', 'Updated At'
+            ];
+            
+            const csvContent = [
+                headers.join(','),
+                ...expenses.map(expense => [
+                    expense.date,
+                    expense.amount,
+                    `"${expense.category || ''}"`,
+                    `"${(expense.description || '').replace(/"/g, '""')}"`,
+                    expense.taxDeductible ? 'Yes' : 'No',
+                    expense.taxAmount || 0,
+                    expense.paymentMethod || '',
+                    expense.account || '',
+                    `"${(expense.vendor || '').replace(/"/g, '""')}"`,
+                    `"${(expense.project || '').replace(/"/g, '""')}"`,
+                    `"${(expense.tags || []).join(', ')}"`,
+                    expense.createdAt || '',
+                    expense.updatedAt || ''
+                ].join(','))
+            ];
+            
+            // Add summary if requested
+            if (options.includeSummary) {
+                const summary = this.generateExportSummary(expenses);
+                csvContent.push('', '--- SUMMARY ---');
+                csvContent.push(`Total Records,${summary.totalRecords}`);
+                csvContent.push(`Total Amount,${summary.totalAmount}`);
+                csvContent.push(`Tax Deductible Amount,${summary.taxDeductibleAmount}`);
+                csvContent.push(`Estimated Tax Savings,${summary.estimatedTaxSavings}`);
+            }
 
-        const filename = this.generateFilename('csv', options);
-        this.downloadFile(csvContent, filename, 'text/csv');
-        this.showSuccessMessage('CSV export completed successfully!');
+            const filename = this.generateFilename('csv', options);
+            this.downloadFile(csvContent.join('\n'), filename, 'text/csv');
+            this.showSuccessMessage(`CSV export completed! ${expenses.length} records exported.`);
+            
+            // Track export for analytics
+            this.trackExport('csv', expenses.length);
+        } catch (error) {
+            console.error('CSV export failed:', error);
+            this.showErrorMessage('CSV export failed. Please try again.');
+        }
     }
 
     exportToJSON(expenses, options) {
@@ -1073,16 +1415,31 @@ class PaksaExpenseTracker {
     }
 
     exportToPDF(expenses, options) {
-        // Create a comprehensive PDF report
-        const reportContent = this.generatePDFReport(expenses, options);
-        const htmlContent = this.generateHTMLReport(expenses, options);
-        
-        // For now, create an HTML report that can be printed to PDF
-        const newWindow = window.open('', '_blank');
-        newWindow.document.write(htmlContent);
-        newWindow.document.close();
-        
-        this.showSuccessMessage('PDF report generated successfully!');
+        try {
+            const htmlContent = this.generateHTMLReport(expenses, options);
+            
+            // Create a new window for PDF generation
+            const newWindow = window.open('', '_blank');
+            if (!newWindow) {
+                throw new Error('Popup blocked. Please allow popups for this site.');
+            }
+            
+            newWindow.document.write(htmlContent);
+            newWindow.document.close();
+            
+            // Auto-trigger print dialog after content loads
+            newWindow.onload = () => {
+                setTimeout(() => {
+                    newWindow.print();
+                }, 500);
+            };
+            
+            this.showSuccessMessage(`PDF report generated! ${expenses.length} records included.`);
+            this.trackExport('pdf', expenses.length);
+        } catch (error) {
+            console.error('PDF export failed:', error);
+            this.showErrorMessage('PDF export failed: ' + error.message);
+        }
     }
 
     exportToXML(expenses, options) {
@@ -1155,38 +1512,202 @@ class PaksaExpenseTracker {
 
     generateHTMLReport(expenses, options) {
         const summary = this.generateExportSummary(expenses);
+        const currentDate = new Date().toLocaleDateString();
+        const currentTime = new Date().toLocaleTimeString();
         
         return `
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ExpenseTracker Pro - Tax Report</title>
+    <title>Paksa Daily Expense - Professional Tax Report</title>
+    <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #4299e1; padding-bottom: 20px; }
-        .summary { background: #f8fafc; padding: 20px; margin: 20px 0; border-radius: 8px; }
-        .expense-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .expense-table th, .expense-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .expense-table th { background-color: #4299e1; color: white; }
-        .footer { margin-top: 40px; text-align: center; color: #666; }
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+            .page-break { page-break-before: always; }
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 20px; 
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .header { 
+            text-align: center; 
+            border-bottom: 3px solid #4299e1; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #1a365d;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        
+        .header h2 {
+            color: #4299e1;
+            margin: 10px 0;
+            font-weight: normal;
+        }
+        
+        .company-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .summary { 
+            background: #f8fafc; 
+            padding: 25px; 
+            margin: 20px 0; 
+            border-radius: 10px;
+            border-left: 5px solid #4299e1;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .summary-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .summary-item .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4299e1;
+        }
+        
+        .expense-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .expense-table th, .expense-table td { 
+            border: 1px solid #e2e8f0; 
+            padding: 12px 8px; 
+            text-align: left; 
+        }
+        
+        .expense-table th { 
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        
+        .expense-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .expense-table tbody tr:hover {
+            background-color: #e6fffa;
+        }
+        
+        .tax-deductible {
+            background-color: #d4edda !important;
+            border-left: 4px solid #28a745;
+        }
+        
+        .footer { 
+            margin-top: 40px; 
+            text-align: center; 
+            color: #666;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        
+        .print-button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        
+        .print-button:hover {
+            background: #3182ce;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+            background: #e2e8f0;
+            color: #4a5568;
+        }
     </style>
 </head>
 <body>
+    <div class="no-print">
+        <button class="print-button" onclick="window.print()">🖨️ Print Report</button>
+        <button class="print-button" onclick="window.close()">❌ Close</button>
+    </div>
+    
     <div class="header">
-        <h1>ExpenseTracker Pro</h1>
-        <h2>Tax Deductible Expenses Report</h2>
-        <p>Generated on: ${new Date().toLocaleDateString()}</p>
+        <h1>Paksa Daily Expense</h1>
+        <h2>Professional Tax & Financial Report</h2>
+        <p><strong>Generated:</strong> ${currentDate} at ${currentTime}</p>
+        <p><strong>Report Type:</strong> ${options.taxReport ? 'Tax Deductible Expenses' : 'Complete Expense Report'}</p>
+    </div>
+    
+    <div class="company-info">
+        <h3>📊 Report Information</h3>
+        <p><strong>Business:</strong> ${this.settings.profile?.businessName || 'Personal Expenses'}</p>
+        <p><strong>Tax Year:</strong> ${this.settings.tax?.taxYear || new Date().getFullYear()}</p>
+        <p><strong>Filing Status:</strong> ${this.settings.tax?.filingStatus || 'Not specified'}</p>
+        <p><strong>Tax Rate:</strong> ${this.settings.tax?.defaultTaxRate || 22}%</p>
     </div>
     
     <div class="summary">
-        <h3>Summary</h3>
-        <p><strong>Total Records:</strong> ${summary.totalRecords}</p>
-        <p><strong>Total Amount:</strong> $${summary.totalAmount.toFixed(2)}</p>
-        <p><strong>Tax Deductible Amount:</strong> $${summary.taxDeductibleAmount.toFixed(2)}</p>
-        <p><strong>Estimated Tax Savings:</strong> $${summary.estimatedTaxSavings.toFixed(2)}</p>
-        <p><strong>Report Period:</strong> ${summary.dateRange.start} to ${summary.dateRange.end}</p>
+        <h3>📈 Financial Summary</h3>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="label">Total Records</div>
+                <div class="value">${summary.totalRecords}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Total Amount</div>
+                <div class="value">$${summary.totalAmount.toFixed(2)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Tax Deductible</div>
+                <div class="value">$${summary.taxDeductibleAmount.toFixed(2)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Est. Tax Savings</div>
+                <div class="value">$${summary.estimatedTaxSavings.toFixed(2)}</div>
+            </div>
+        </div>
+        <p><strong>📅 Report Period:</strong> ${summary.dateRange.start || 'N/A'} to ${summary.dateRange.end || 'N/A'}</p>
     </div>
     
+    <h3>📋 Detailed Expense Records</h3>
     <table class="expense-table">
         <thead>
             <tr>
@@ -1194,35 +1715,123 @@ class PaksaExpenseTracker {
                 <th>Amount</th>
                 <th>Category</th>
                 <th>Description</th>
+                <th>Vendor</th>
+                <th>Tax Deductible</th>
                 <th>Tax Amount</th>
             </tr>
         </thead>
         <tbody>
             ${expenses.map(expense => `
-                <tr>
-                    <td>${expense.date}</td>
-                    <td>$${expense.amount.toFixed(2)}</td>
-                    <td>${expense.category}</td>
-                    <td>${expense.description || ''}</td>
+                <tr class="${expense.taxDeductible ? 'tax-deductible' : ''}">
+                    <td>${new Date(expense.date).toLocaleDateString()}</td>
+                    <td><strong>$${expense.amount.toFixed(2)}</strong></td>
+                    <td><span class="category-badge">${expense.category}</span></td>
+                    <td>${expense.description || 'No description'}</td>
+                    <td>${expense.vendor || 'N/A'}</td>
+                    <td>${expense.taxDeductible ? '✅ Yes' : '❌ No'}</td>
                     <td>$${(expense.taxAmount || 0).toFixed(2)}</td>
                 </tr>
             `).join('')}
         </tbody>
     </table>
     
+    ${this.generateCategorySummaryTable(expenses)}
+    
     <div class="footer">
-        <p>This report was generated by ExpenseTracker Pro</p>
-        <p>For tax preparation purposes - please consult with a tax professional</p>
+        <h4>📄 Report Generated by Paksa Daily Expense</h4>
+        <p><strong>© 2025 Paksa IT Solutions</strong></p>
+        <p>This report is generated for tax preparation and financial analysis purposes.</p>
+        <p><em>Please consult with a qualified tax professional for tax advice.</em></p>
+        <p><small>Report ID: ${Date.now().toString(36).toUpperCase()}</small></p>
     </div>
 </body>
 </html>
         `;
     }
+    
+    generateCategorySummaryTable(expenses) {
+        const categoryTotals = {};
+        const categoryTaxDeductible = {};
+        
+        expenses.forEach(expense => {
+            const category = expense.category;
+            categoryTotals[category] = (categoryTotals[category] || 0) + expense.amount;
+            if (expense.taxDeductible) {
+                categoryTaxDeductible[category] = (categoryTaxDeductible[category] || 0) + expense.amount;
+            }
+        });
+        
+        const sortedCategories = Object.entries(categoryTotals)
+            .sort(([,a], [,b]) => b - a);
+        
+        return `
+            <div class="page-break"></div>
+            <h3>📊 Category Summary</h3>
+            <table class="expense-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Total Amount</th>
+                        <th>Tax Deductible</th>
+                        <th>Percentage of Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sortedCategories.map(([category, total]) => {
+                        const taxDeductible = categoryTaxDeductible[category] || 0;
+                        const percentage = ((total / expenses.reduce((sum, exp) => sum + exp.amount, 0)) * 100).toFixed(1);
+                        return `
+                            <tr>
+                                <td><span class="category-badge">${category}</span></td>
+                                <td><strong>$${total.toFixed(2)}</strong></td>
+                                <td>$${taxDeductible.toFixed(2)}</td>
+                                <td>${percentage}%</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+    
+    trackExport(format, recordCount) {
+        try {
+            const exportLog = JSON.parse(localStorage.getItem('paksa_export_log') || '[]');
+            exportLog.push({
+                format,
+                recordCount,
+                timestamp: new Date().toISOString(),
+                page: this.currentPage
+            });
+            
+            // Keep only last 50 exports
+            if (exportLog.length > 50) {
+                exportLog.splice(0, exportLog.length - 50);
+            }
+            
+            localStorage.setItem('paksa_export_log', JSON.stringify(exportLog));
+        } catch (error) {
+            console.error('Failed to track export:', error);
+        }
+    }
 
     generateFilename(format, options) {
         const date = new Date().toISOString().split('T')[0];
-        const prefix = options.taxReport ? 'tax-report' : 'expenses';
-        return `${prefix}-${date}.${format}`;
+        const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+        
+        let prefix = 'paksa-expenses';
+        if (options.taxReport) {
+            prefix = 'paksa-tax-report';
+        } else if (options.categories && options.categories.length === 1 && options.categories[0] !== 'all') {
+            prefix = `paksa-${options.categories[0].toLowerCase().replace(/\s+/g, '-')}`;
+        }
+        
+        const businessName = this.settings.profile?.businessName;
+        if (businessName) {
+            prefix += `-${businessName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+        }
+        
+        return `${prefix}-${date}-${time}.${format}`;
     }
 
     downloadFile(content, filename, contentType) {
